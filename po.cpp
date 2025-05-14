@@ -308,7 +308,7 @@ double **inversa(double **M, int n){
     }
     for (int i = 0; i < n; i++) {
         double divisor = P[i][i];
-        for (int j = 0; j <= n; j++){
+        for (int j = 0; j < n; j++){
             P[i][j] /= divisor;
             I[i][j] /= divisor;
         }
@@ -316,7 +316,7 @@ double **inversa(double **M, int n){
         for (int j = 0; j < n; j++){
             if (j != i) {
                 double multiplier = P[j][i];
-                for (int k = 0; k <= n; k++){
+                for (int k = 0; k < n; k++){
                     P[j][k] -= multiplier * P[i][k];
                     I[j][k] -= multiplier * I[i][k];
                 }      
@@ -466,7 +466,7 @@ int main()
     cout << "tashuka" << endl;
     imprimeMatriz(M, 3, 3);
 
-    /*
+    
 
     double **N = alocaMatriz<double>(2, 2);
     N[0][0] = 1;
@@ -478,7 +478,7 @@ int main()
     liberaMatriz(A, numRestricoes);
     liberaMatriz(M, 3);
     liberaMatriz(N, 2);
-    */
+    
     return 0;
 }
 

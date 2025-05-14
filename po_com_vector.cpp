@@ -8,18 +8,42 @@
 
 using namespace std;
 
+template <typename T>
+void imprimeMatriz(const vector<vector<T>> &M)
+{
+    for (const auto &row : M)
+    {
+        for (const auto &elem : row)
+        {
+            cout << '\t' << elem;
+        }
+        cout << endl;
+    }
+}
+
+template <typename T>
+void impremeVetor(const vector<T> &v)
+{
+    for (const auto &elem : v)
+    {
+        cout << elem << " ";
+    }
+    cout << endl;
+}
+
+
 // Faz a alocação de uma matriz
 template <typename T>
 vector<vector<T>>  alocaMatriz(int m, int n)
 {
-    try {
-        cout << "Alocando matriz de " << m << " x " << n << endl;
-        return vector<vector<T>>(m, vector<T>(n));  
-    } catch (const std::bad_alloc& e) {
-        std::cerr << "Erro de alocação: " << e.what() << std::endl;
-        return vector<vector<T>>(m, vector<T>(n));
-    }
-    
+    return vector<vector<T>>(m, vector<T>(n));  
+}
+
+// Faz a alocação de uma matriz inicializada com um valor especifico
+template <typename T>
+vector<vector<T>>  alocaMatriz(int m, int n, T x)
+{
+    return vector<vector<T>>(m, vector<T>(n, x));  
 }
 
 // Faz a leitura do arquivo de entrada e o coloca em uma string com as linhas dividadas por \n
@@ -267,20 +291,17 @@ vector<vector<double>> multMatriz(vector<vector<double>> A, int lA, int cA, vect
 
 vector<vector<double>> inversa(vector<vector<double>> M, int n){
     vector<vector<double>> I;
-    I = alocaMatriz<double>(n, n);
+    I = alocaMatriz<double>(n, n, 0.0);
     for (int i = 0; i < n; i++){
-        for (int j = 0; j < n; j++){
-            if (i == j){
-                I[i][j] = 1;
-            }
-            else {
-                I[i][j] = 0;
-            }
-        }
+        I[i][i] = 1.0;
     }
+    
     for (int i = 0; i < n; i++) {
         double divisor = M[i][i];
-        for (int j = 0; j <= n; j++){
+        if (divisor == 0.0) {
+            throw runtime_error("Matriz singular: divisão por zero.");
+        }
+        for (int j = 0; j < n; j++){
             M[i][j] /= divisor;
             I[i][j] /= divisor;
         }
@@ -288,7 +309,7 @@ vector<vector<double>> inversa(vector<vector<double>> M, int n){
         for (int j = 0; j < n; j++){
             if (j != i) {
                 double multiplier = M[j][i];
-                for (int k = 0; k <= n; k++){
+                for (int k = 0; k < n; k++){
                     M[j][k] -= multiplier * M[i][k];
                     I[j][k] -= multiplier * I[i][k];
                 }      
@@ -299,12 +320,66 @@ vector<vector<double>> inversa(vector<vector<double>> M, int n){
 
 }
 
-int fatorial(int n){
-    if (n == 1){
-        return n;
+bool contemValor(vector<int> v, int valor){
+    for (int i = 0; i < v.size(); i++){
+        if (v[i] == valor){
+            return true;
+        }
     }
-    else {
-        return n * fatorial(n - 1);
+    return false;
+}
+
+bool contemConjunto(vector<vector<int>> v, vector<int> conjunto){
+    for (int i = 0; i < v.size(); i++){
+        if (v[i] == conjunto){
+            return true;
+        }
+    }
+    return false;
+}
+
+void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<int> &B, vector<int> &N){
+    vector<vector<double>> MatrizBasicaTemp = alocaMatriz<double>(m, m, 0.0);
+    vector<vector<int>> conjuntosTestados = alocaMatriz<int>(n, m);
+    int ValBTemp;
+
+    while (determinante(MatrizBasicaTemp, m) == 0){
+        vector<int> BTemp(m, -1);
+        for (int i = 0; i < m; i++){
+            bool existe = true;
+            cout << "Escolhendo coluna " << i << endl;
+            while (existe){
+                ValBTemp = (rand() % n);
+                if (contemValor(BTemp, ValBTemp)){
+                    existe = true; 
+                }
+                else {
+                    existe = false;
+                }
+                
+            }
+            BTemp[i] = ValBTemp;
+            B[i] = ValBTemp;
+            for (int j = 0; j < m; j++){
+                cout << M[j][B[i]] << endl;
+                MatrizBasicaTemp[j][i] = M[j][B[i]];
+            }
+        }
+        if (!contemConjunto(conjuntosTestados, B)){
+            conjuntosTestados.push_back(B);
+            cout << "Matriz basica: " << endl;
+            imprimeMatriz(MatrizBasicaTemp);
+            cout << "det: " << determinante(MatrizBasicaTemp, m) << endl;
+        }
+        
+    }
+    int j = 0;
+    for (int i = 0; i < m; i++){
+        cout << i << endl;
+        if (!contemValor(B, i)){
+            N[j] = i;
+            j++;
+        }
     }
 }
 
@@ -334,7 +409,7 @@ void escolherColunas(double **M, int m, int n, int *B, int *N){
                         existe = false;
                     }
                     j++;
-                }
+             .   }
             }
             B[i] = aux;
         }
@@ -342,28 +417,6 @@ void escolherColunas(double **M, int m, int n, int *B, int *N){
 }
 */
 
-template <typename T>
-void imprimeMatriz(const vector<vector<T>> &M)
-{
-    for (const auto &row : M)
-    {
-        for (const auto &elem : row)
-        {
-            cout << '\t' << elem;
-        }
-        cout << endl;
-    }
-}
-
-template <typename T>
-void impremeVetor(const vector<T> &v)
-{
-    for (const auto &elem : v)
-    {
-        cout << elem << " ";
-    }
-    cout << endl;
-}
 
 int main()
 {
@@ -389,7 +442,16 @@ int main()
          << "Vetor b: " << endl;
     impremeVetor(b);
 
-    
+    vector<int> B(numRestricoes), N(numVariaveis - numRestricoes);
+    escolherColunasAleatorias(A, numRestricoes, numVariaveis, B, N);
+
+    cout << endl << "B: " << endl;
+    impremeVetor(B);
+    cout << endl;
+    cout << "N: " << endl;
+    impremeVetor(N);
+    cout << endl;
+    /*
     vector<vector<double>> M = alocaMatriz<double>(3, 3);
     M[0][0] = 2;
     M[0][1] = 1;
@@ -401,30 +463,24 @@ int main()
     M[2][1] = 0;
     M[2][2] = 5;
     cout << determinante(M, 3) << endl;
+
     vector<vector<double>> Ml;
 
     Ml = inversa(M, 3);
     imprimeMatriz(M);
 
-    cout << endl << endl;
+    cout << endl << endl << "inversa: " << endl;
 
     imprimeMatriz(Ml);
 
     cout << "Jean" << endl << endl << endl;
-    
     vector<vector<double>> I;
     cout << "Jean1.5" << endl << endl << endl;
-    I = alocaMatriz<double>(3, 3);
+    I = alocaMatriz<double>(3, 3, 0.0);
     cout << "Jean2" << endl << endl << endl;
-    I[0][0] = 1;
-    I[0][1] = 0;
-    I[0][2] = 0;
-    I[1][0] = 0;
-    I[1][1] = 1;
-    I[1][2] = 0;
-    I[2][0] = 0;
-    I[2][1] = 0;
-    I[2][2] = 1;
+    I[0][0] = 1.0;
+    I[1][1] = 1.0;
+    I[2][2] = 1.0;
     
     cout << "biava" << endl;
     M = multMatriz(M, 3, 3, I, 3);
@@ -440,7 +496,9 @@ int main()
     N[1][0] = 2;
     N[1][1] = 3;
     cout << determinante(N, 2) << endl;
-
+    vector<vector<double>> F = alocaMatriz<double>(2, 2);
+    cout << "foi" << endl;
+    */
     return 0;
 }
 
