@@ -70,6 +70,12 @@ vector<vector<T>> alocaMatriz(int m, int n, T x)
     return vector<vector<T>>(m, vector<T>(n, x));
 }
 
+template <typename T>
+vector<T> alocaVetor(int n)
+{
+    return vector<T>(n);
+}
+
 // Faz a leitura do arquivo de entrada e o coloca em uma string com as linhas dividadas por \n
 string lerTxt()
 {
@@ -319,20 +325,33 @@ vector<vector<double>> multMatriz(vector<vector<double>> A, int lA, int cA, vect
     return matrizFinal;
 }
 
-vector<double> multMatriz(vector<vector<double>> A, int lA, int cA, vector<double> B, int nB)
+vector<double> multMatrizVetor(vector<vector<double>> A, int lA, int cA, vector<double> B)
 {
-    vector<double> vetorFinal = vector<double>(nB);
+    vector<double> vetorFinal = alocaVetor<double>(lA);
     for (int i = 0; i < lA; i++)
     {
-        for (int j = 0; j < nB; j++)
+        double somaMult = 0;
+        for (int k = 0; k < cA; k++)
         {
-            double somaMult = 0;
-            for (int k = 0; k < cA; k++)
-            {
-                somaMult = somaMult + (A[i][k] * B[j]);
-            }
-            vetorFinal[j] = somaMult;
+            somaMult = somaMult + (A[i][k] * B[k]);
         }
+        vetorFinal[i] = somaMult;
+    }
+    return vetorFinal;
+}
+
+vector<double> multVetorMatriz(vector<double> A, int cA, vector<vector<double>> B, int lB, int cB)
+{
+    vector<double> vetorFinal = alocaVetor<double>(cA);
+
+    for (int j = 0; j < cB; j++)
+    {
+        double somaMult = 0;
+        for (int k = 0; k < cA; k++)
+        {
+            somaMult = somaMult + (A[k] * B[k][j]);
+        }
+        vetorFinal[j] = somaMult;
     }
     return vetorFinal;
 }
@@ -434,44 +453,24 @@ vector<double> calcSolucaoBasica(vector<vector<double>> M, vector<int> B, vector
     vector<double> solucaoBasica;
     vector<int> linhas;
     vector<vector<double>> inversaB = inversa(matrizParcial(M, M.size(), linhas, N), B.size());
-    vector<vector<double>> bTemp;
-    solucaoBasica = multMatriz(inversaB, B.size(), B.size(), b, b.size());
+    solucaoBasica = multMatrizVetor(inversaB, B.size(), B.size(), b);
+    return solucaoBasica;
+}
+
+vector<double> calcCustosRelativos(vector<vector<double>> M, vector<int> B, vector<int> N, vector<double> c)
+{
+    vector<double> vetorMultiplicador, custosRelativos;
+    vector<int> linhas;
+    vector<vector<double>> inversaB = inversa(matrizParcial(M, M.size(), linhas, N), B.size());
+    vetorMultiplicador = multVetorMatriz(c, c.size(), inversaB, B.size(), B.size());
 
 }
 
-/*
-void escolherColunas(double **M, int m, int n, int *B, int *N){
-    int conjuntosTestados[fatorial(n)][m], numConjuntos, colunasTemp[m];
-    double **MatrizTemp;
-    for (int i = 0; i < m; i++){
-        colunasTemp[i] = i;
-    }
-    for (int coluna : colunasTemp){
-
-    }
-
-        B[0] = ((m - 1) % rand()) + 1;
-        int aux = B[0];
-        bool existe = true;
-        for (int i = 1; i < m; i++){
-            while (existe){
-                aux = ((m - 1) % rand()) + 1;
-                int j = 0;
-                while (j < i && !existe){
-                    if (B[j] == aux){
-                        existe = true;
-                    }
-                    else {
-                        existe = false;
-                    }
-                    j++;
-             .   }
-            }
-            B[i] = aux;
-        }
+void faseII(vector<vector<double>> M, vector<int> B, vector<int> N, vector<double> b, vector<double> c)
+{
+    
 
 }
-*/
 
 int main()
 {
@@ -497,7 +496,7 @@ int main()
          << "Vetor b: " << endl;
     impremeVetor(b);
 
-    impremeVetor(multMatriz(A, numRestricoes, numVariaveis, b, numRestricoes));
+    impremeVetor(multMatrizVetor(A, numRestricoes, numVariaveis, b));
     cout << endl;
 
     vector<int> B(numRestricoes), N(numVariaveis - numRestricoes);
