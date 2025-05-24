@@ -8,7 +8,7 @@
 
 using namespace std;
 
-vector<vector<double>> extraiColunas(const vector<vector<double>> &A, const vector<int>& B) {
+vector<vector<double>> extraiColunas(const vector<vector<double>> A, const vector<int> B) {
     vector<vector<double>> resultado(A.size(), vector<double>(B.size()));
     for (int i = 0; i < A.size(); ++i)
         for (int j = 0; j < B.size(); ++j)
@@ -342,9 +342,8 @@ vector<vector<T>> matrizParcial(vector<vector<T>> M, int n, vector<int> i, vecto
 template <typename T>
 vector<vector<T>> matrizParcialColuna(vector<vector<T>> M, int n, vector<int> j)
 {
-    cout << "biava0.1" << endl;
     vector<vector<T>> R = alocaMatriz<T>(n - 1, n - 1);
-    cout << "biava0.2" << endl;
+
     int linha = 0;
     for (int k = 0; k < n; k++)
     {
@@ -355,12 +354,10 @@ vector<vector<T>> matrizParcialColuna(vector<vector<T>> M, int n, vector<int> j)
             {
                 R[linha][coluna] = M[k][q];
                 coluna++;
-                cout << "biava0.3" << endl;
             }
         }
         linha++;
     }
-    cout << "biava0.4" << endl;
     return R;
 }
 
@@ -523,11 +520,8 @@ double multVetor(vector<double> A, vector<double> B)
  */
 vector<vector<double>> inversa(vector<vector<double>> M, int n)
 {
-    cout << "biava0.5" << endl;
     vector<vector<double>> I;
-    cout << "biava" << endl;
     I = alocaMatriz<double>(n, n, 0.0);
-    cout << "biava2" << endl;
     for (int i = 0; i < n; i++)
     {
         I[i][i] = 1.0;
@@ -627,7 +621,7 @@ void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<in
 vector<double> calcSolucaoBasica(vector<vector<double>> A, vector<int> B, vector<int> N, vector<double> b)
 {
     vector<double> solucaoBasica;
-    vector<vector<double>> inversaB = inversa(matrizParcialColuna(A, A.size(), N), B.size());
+    vector<vector<double>> inversaB = inversa(extraiColunas(A, B), B.size());
     solucaoBasica = multMatrizVetor(inversaB, B.size(), B.size(), b);
     return solucaoBasica;
 }
@@ -635,7 +629,7 @@ vector<double> calcSolucaoBasica(vector<vector<double>> A, vector<int> B, vector
 double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> N, vector<double> c)
 {
     vector<double> vetorMultiplicador, custosRelativos, custosBasica;
-    vector<vector<double>> inversaB = inversa(matrizParcialColuna(A, A.size(), N), B.size());
+    vector<vector<double>> inversaB = inversa(extraiColunas(A, B), B.size());
     custosBasica = alocaVetor<double>(B.size());
     for (int i = 0; i < B.size(); i++)
     {
@@ -662,7 +656,7 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
 {
     vector<double> solucaoBasica, y;
     cout << "pre-inversa" << endl;
-    vector<vector<double>> inversaB = inversa(matrizParcialColuna(A, A.size(), N), B.size());
+    vector<vector<double>> inversaB = inversa(extraiColunas(A, B), B.size());
     double custoRelativo = -1;
     int k = 0;
     cout << "Antes" << endl;
