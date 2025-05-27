@@ -308,7 +308,7 @@ void lerCoeficientes(vector<vector<double>> &A, string input, int numRestricoes,
  * @retval **R  Matriz reduzida resultante.
  */
 template <typename T>
-vector<vector<T>> matrizParcial(vector<vector<T>> M, int n, vector<int> i, vector<int> j)
+vector<vector<T>> matrizParcial(vector<vector<T>> M, int n, int m, vector<int> i, vector<int> j)
 {
     vector<vector<T>> R = alocaMatriz<T>(n - 1, n - 1);
 
@@ -318,7 +318,7 @@ vector<vector<T>> matrizParcial(vector<vector<T>> M, int n, vector<int> i, vecto
         if (!contemValor(i, k))
         {
             int coluna = 0;
-            for (int q = 0; q < n; q++)
+            for (int q = 0; q < m; q++)
             {
                 if (!contemValor(j, q))
                 {
@@ -340,7 +340,7 @@ vector<vector<T>> matrizParcial(vector<vector<T>> M, int n, vector<int> i, vecto
  * @retval **R  Matriz reduzida resultante.
  */
 template <typename T>
-vector<vector<T>> matrizParcialColuna(vector<vector<T>> M, int n, vector<int> j)
+vector<vector<T>> matrizParcialColuna(vector<vector<T>> M, int n, int m, vector<int> j)
 {
     cout << "biava0.1" << endl;
     vector<vector<T>> R = alocaMatriz<T>(n - 1, n - 1);
@@ -349,7 +349,7 @@ vector<vector<T>> matrizParcialColuna(vector<vector<T>> M, int n, vector<int> j)
     for (int k = 0; k < n; k++)
     {
         int coluna = 0;
-        for (int q = 0; q < n; q++)
+        for (int q = 0; q < m; q++)
         {
             if (!contemValor(j, q))
             {
@@ -372,7 +372,7 @@ vector<vector<T>> matrizParcialColuna(vector<vector<T>> M, int n, vector<int> j)
  * @retval **R  Matriz reduzida resultante.
  */
 template <typename T>
-vector<vector<T>> matrizParcialLinha(vector<vector<T>> M, int n, vector<int> i)
+vector<vector<T>> matrizParcialLinha(vector<vector<T>> M, int n, int m, vector<int> i)
 {
     vector<vector<T>> R = alocaMatriz<T>(n - 1, n - 1);
 
@@ -662,6 +662,7 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
 {
     vector<double> solucaoBasica, y;
     cout << "pre-inversa" << endl;
+    imprimeMatriz(matrizParcialColuna(A, A.size(), N));
     vector<vector<double>> inversaB = inversa(matrizParcialColuna(A, A.size(), N), B.size());
     double custoRelativo = -1;
     int k = 0;
@@ -705,8 +706,6 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
         N[k] = varAux;
         k++;
     }
-    
-
 }
 
 int main()
