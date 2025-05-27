@@ -133,6 +133,13 @@ vector<T> alocaVetor(int n)
     return vector<T>(n);
 }
 
+// Faz a alocação de um vetor
+template <typename T>
+vector<T> alocaVetor(int n, T x)
+{
+    return vector<T>(n, x);
+}
+
 // Faz a leitura do arquivo de entrada e o coloca em uma string com as linhas dividadas por \n
 string lerTxt()
 {
@@ -515,40 +522,55 @@ double multVetor(vector<double> A, vector<double> B)
 /**
  * Calcula a inversa de uma matriz quadrada.
  * @param M     [IN]  Matriz a ser invertida.
- * @param n     [IN]  Tamanho da matriz.
  * @retval **R  Matriz inversa resultante.
  */
-vector<vector<double>> inversa(vector<vector<double>> M, int n)
+vector<vector<double>> inversa(vector<vector<double>> M)
 {
-    vector<vector<double>> I;
-    I = alocaMatriz<double>(n, n, 0.0);
+    int n = M.size();
+    vector<vector<double>> I = alocaMatriz<double>(n, n, 0.0);
+
+    // Inicializa a matriz identidade
     for (int i = 0; i < n; i++)
-    {
         I[i][i] = 1.0;
-    }
 
     for (int i = 0; i < n; i++)
     {
-        double divisor = M[i][i];
-        if (divisor == 0.0)
+        // Procura o maior elemento na coluna para evitar divisão por zero
+        double maxEl = fabs(M[i][i]);
+        int maxRow = i;
+        for (int k = i + 1; k < n; k++)
         {
-            throw runtime_error("Matriz singular: divisão por zero.");
+            if (fabs(M[k][i]) > maxEl)
+            {
+                maxEl = fabs(M[k][i]);
+                maxRow = k;
+            }
         }
+        if (fabs(maxEl) == 0.0)
+            throw runtime_error("Matriz singular, não possui inversa.");
+
+        // Troca as linhas na matriz original e na identidade
+        swap(M[i], M[maxRow]);
+        swap(I[i], I[maxRow]);
+
+        // Divide a linha pelo pivô
+        double piv = M[i][i];
         for (int j = 0; j < n; j++)
         {
-            M[i][j] /= divisor;
-            I[i][j] /= divisor;
+            M[i][j] /= piv;
+            I[i][j] /= piv;
         }
 
-        for (int j = 0; j < n; j++)
+        // Elimina os outros elementos da coluna
+        for (int k = 0; k < n; k++)
         {
-            if (j != i)
+            if (k != i)
             {
-                double multiplier = M[j][i];
-                for (int k = 0; k < n; k++)
+                double f = M[k][i];
+                for (int j = 0; j < n; j++)
                 {
-                    M[j][k] -= multiplier * M[i][k];
-                    I[j][k] -= multiplier * I[i][k];
+                    M[k][j] -= f * M[i][j];
+                    I[k][j] -= f * I[i][j];
                 }
             }
         }
@@ -620,16 +642,20 @@ void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<in
 
 vector<double> calcSolucaoBasica(vector<vector<double>> A, vector<int> B, vector<int> N, vector<double> b)
 {
-    vector<double> solucaoBasica;
-    vector<vector<double>> inversaB = inversa(extraiColunas(A, B), B.size());
-    solucaoBasica = multMatrizVetor(inversaB, B.size(), B.size(), b);
+    vector<double> solucaoBasica = alocaVetor<double>(A[0].size(), 0.0);
+    vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
+    vector<double> aux = multMatrizVetor(inversaB, B.size(), B.size(), b);
+    for(int i = 0; i < aux.size(); i++)
+    {
+        solucaoBasica[i] = aux[i];
+    }
     return solucaoBasica;
 }
 
 double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> N, vector<double> c)
 {
     vector<double> vetorMultiplicador, custosRelativos, custosBasica;
-    vector<vector<double>> inversaB = inversa(extraiColunas(A, B), B.size());
+    vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
     custosBasica = alocaVetor<double>(B.size());
     for (int i = 0; i < B.size(); i++)
     {
@@ -656,7 +682,8 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
 {
     vector<double> solucaoBasica, y;
     cout << "pre-inversa" << endl;
-    vector<vector<double>> inversaB = inversa(extraiColunas(A, B), B.size());
+    imprimeMatriz(extraiColunas(A, B));
+    vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
     double custoRelativo = -1;
     int k = 0;
     cout << "Antes" << endl;
@@ -669,6 +696,7 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
         impremeVetor(N);
         solucaoBasica = calcSolucaoBasica(A, B, N, b);
         custoRelativo = calcCustosRelativos(A, B, N, c);
+        cout << "agustus" << endl;
         y = multMatrizVetor(inversaB, B.size(), B.size(), A[N[k]]);
         if(vetorMenorZero(y)){
             throw runtime_error("Solução não é viável.");
@@ -698,9 +726,16 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
         B[variavelSaida] = N[k];
         N[k] = varAux;
         k++;
+        cout << "Custo relativo: " << custoRelativo << endl;
     }
     
-
+    cout << "Solução ótima encontrada." << endl;
+    double solucaoOtima = 0;    
+    for(int i = 0; i < (B.size() + N.size()); i++){
+        solucaoOtima += c[i] * solucaoBasica[i];
+        cout << "c[" << i << "] = " << c[i] << ", solucaoBasica[" << i << "] = " << solucaoBasica[i] << endl;
+    }
+    cout << "Solução ótima: " << solucaoOtima << endl;
 }
 
 int main()
@@ -726,10 +761,15 @@ int main()
     cout << endl
          << "Vetor b: " << endl;
     impremeVetor(b);
-    cout << endl;
+    cout << endl << "-------------------------" << endl;
 
     vector<int> B(numRestricoes), N(numVariaveis - numRestricoes);
     escolherColunasAleatorias(A, numRestricoes, numVariaveis, B, N);
+    cout << "determinante:" << determinante(extraiColunas(A, B), B.size()) << endl;
+    cout << "Matriz B: " << endl;
+    imprimeMatriz(extraiColunas(A, B));
+    cout << "Matriz inversa: " << endl;
+    imprimeMatriz(inversa(extraiColunas(A, B)));
     cout << "escolheu as aleatorias" << endl;
     faseII(A, B, N, b, c);
 
@@ -740,6 +780,7 @@ int main()
     cout << "N: " << endl;
     impremeVetor(N);
     cout << endl;
+    cout << "Caralhoooo" << endl;
     /*
     vector<vector<double>> M = alocaMatriz<double>(3, 3);
     M[0][0] = 2;
