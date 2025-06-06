@@ -8,6 +8,14 @@
 
 using namespace std;
 
+vector<double> pegaColuna(const vector<vector<double>>& A, int i) {
+    vector<double> coluna(A.size());
+    for (int j = 0; j < A.size(); ++j) {
+        coluna[j] = A[j][i];
+    }
+    return coluna;
+}
+
 vector<vector<double>> extraiColunas(const vector<vector<double>> A, const vector<int> B) {
     vector<vector<double>> resultado(A.size(), vector<double>(B.size()));
     for (int i = 0; i < A.size(); ++i)
@@ -628,10 +636,11 @@ void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<in
         }
     }
     int j = 0;
-    for (int i = 0; i < m; i++)
+    cout << "Valo M " << m << endl;
+    for (int i = 0; i < n; i++)
     {
         cout << i << endl;
-        if (!contemValor(B, i))
+        if (!contemValor(B, i) && !contemValor(N, i))
         {
             N[j] = i;
             j++;
@@ -645,14 +654,19 @@ vector<double> calcSolucaoBasica(vector<vector<double>> A, vector<int> B, vector
     vector<double> solucaoBasica = alocaVetor<double>(A[0].size(), 0.0);
     vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
     vector<double> aux = multMatrizVetor(inversaB, B.size(), B.size(), b);
-    for(int i = 0; i < aux.size(); i++)
+    cout << "aux: ";
+    impremeVetor(aux);
+    impremeVetor(B);
+    for (int i = 0; i < B.size(); i++)
     {
-        solucaoBasica[i] = aux[i];
+        solucaoBasica[B[i]] = aux[i];
     }
+    int j = 0;
+    
     return solucaoBasica;
 }
 
-double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> N, vector<double> c)
+double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> N, vector<double> c, int &varEntrada)
 {
     vector<double> vetorMultiplicador, custosRelativos, custosBasica;
     vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
@@ -662,12 +676,27 @@ double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> 
         custosBasica[i] = c[B[i]];
     }
     vetorMultiplicador = multVetorMatriz(custosBasica, custosBasica.size(), inversaB, B.size());
+    cout << "vetorMultiplicador: ";
+    impremeVetor(vetorMultiplicador);
     custosRelativos = alocaVetor<double>(N.size());
     for(int i = 0; i < N.size(); i++)
     {
-        custosRelativos[i] = c[N[i]] - multVetor(vetorMultiplicador, A[N[i]]);
+        custosRelativos[i] = c[N[i]] - multVetor(vetorMultiplicador, pegaColuna(A, N[i]));
     }
-    return menorValor(custosRelativos);
+    cout << "Custos relativos: ";
+    impremeVetor(custosRelativos);
+    double menor = menorValor(custosRelativos);
+    for (int i = 0; i < custosRelativos.size(); i++)
+    {
+        if (custosRelativos[i] == menor)
+        {
+            varEntrada = i;
+            cout << "Variavel de entrada: " << N[varEntrada] << endl;
+            cout << "Custo relativo: " << menor << endl;
+            break;
+        }
+    }
+    return menor;
 }
 
 /**
@@ -681,61 +710,85 @@ double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> 
 void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> b, vector<double> c)
 {
     vector<double> solucaoBasica, y;
-    cout << "pre-inversa" << endl;
-    imprimeMatriz(extraiColunas(A, B));
-    vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
+    
+   
     double custoRelativo = -1;
     int k = 0;
     cout << "Antes" << endl;
-    while (custoRelativo < 0 && k < N.size())
-    {
-        cout << "k: " << k << endl;
+    while (custoRelativo < 0)
+    {   
+        cout << "pre-inversa" << endl;
+        imprimeMatriz(extraiColunas(A, B));
+        vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
+        cout << endl << endl << "--------------------------" << endl;
+        cout << "Iteração: " << k << endl;
         cout << "B: " << endl;
         impremeVetor(B);
         cout << "N: " << endl;
         impremeVetor(N);
         solucaoBasica = calcSolucaoBasica(A, B, N, b);
-        custoRelativo = calcCustosRelativos(A, B, N, c);
-        cout << "agustus" << endl;
-        y = multMatrizVetor(inversaB, B.size(), B.size(), A[N[k]]);
-        if(vetorMenorZero(y)){
-            throw runtime_error("Solução não é viável.");
-            return;
-        }
-        int variavelSaida;
-        vector<double> aux = alocaVetor<double>(y.size());
-        for (int i = 0; i < y.size(); i++)
-        {
-            if(y[i] != 0){
-                aux[i] = solucaoBasica[i] / y[i];
-            }
-            else {
-                aux[i] = INT16_MAX;
-            }
-        }
-        double e = menorValor(aux);
-        for (int i = 0; i < y.size(); i++)
-        {
-            if (aux[i] == e)
-            {
-                variavelSaida = i;
-                break;
-            }
-        }
-        int varAux = B[variavelSaida];
-        B[variavelSaida] = N[k];
-        N[k] = varAux;
-        k++;
+        cout << "solucao basica:";
+        impremeVetor(solucaoBasica);
+        int variavelEntrada;
+        custoRelativo = calcCustosRelativos(A, B, N, c, variavelEntrada);
         cout << "Custo relativo: " << custoRelativo << endl;
+        if (custoRelativo < 0){
+            cout << N[variavelEntrada] << endl;
+            impremeVetor(pegaColuna(A, N[variavelEntrada]));
+            imprimeMatriz(inversaB);
+            y = multMatrizVetor(inversaB, B.size(), B.size(), pegaColuna(A, N[variavelEntrada]));
+            cout << "y: ";
+            impremeVetor(y);
+            if(vetorMenorZero(y)){
+                throw runtime_error("Solução não é viável.");
+                return;
+            }
+            int variavelSaida;
+            int menor = INT16_MAX;
+            vector<double> aux = alocaVetor<double>(y.size());
+            for (int i = 0; i < y.size(); i++)
+            {   
+                cout << "------------------------" << endl;
+                cout << "menor antes: " << menor << endl;
+                if(y[i] > 0){
+                    aux[i] = solucaoBasica[B[i]] / y[i];
+                    cout << "y " << y[i] << endl;
+                    if (aux[i] < menor)
+                    {
+                        cout << "aux " << aux[i] << endl;
+                        menor = aux[i];
+                        variavelSaida = i;
+                        cout << "menor = " << menor << endl;
+                        cout << "variavelSaida = " << variavelSaida << endl;
+                    }
+                }
+            }
+            cout << "aux 2" << endl;
+            impremeVetor(aux);
+            cout << "Variavel saida: " << B[variavelSaida] << "   indice: " << variavelSaida << endl;
+            cout << "Variavel entrada: " << N[variavelEntrada] << endl;
+            impremeVetor(B);
+            impremeVetor(N);
+            cout << B[variavelSaida] << " <- " << N[variavelEntrada] << endl;
+            cout << B[2] << endl;
+            cout << N[1] << endl;
+            int varAux = B[variavelSaida];
+            B[variavelSaida] = N[variavelEntrada];
+            N[variavelEntrada] = varAux;
+            k++;
+            cout << "Custo relativo: " << custoRelativo << endl;
+            impremeVetor(B);
+            impremeVetor(N);
+        }
     }
     
-    cout << "Solução ótima encontrada." << endl;
+    cout << "Solucao otima encontrada." << endl;
     double solucaoOtima = 0;    
     for(int i = 0; i < (B.size() + N.size()); i++){
         solucaoOtima += c[i] * solucaoBasica[i];
         cout << "c[" << i << "] = " << c[i] << ", solucaoBasica[" << i << "] = " << solucaoBasica[i] << endl;
     }
-    cout << "Solução ótima: " << solucaoOtima << endl;
+    cout << "Solucao otima: " << solucaoOtima << endl;
 }
 
 int main()
@@ -765,12 +818,15 @@ int main()
 
     vector<int> B(numRestricoes), N(numVariaveis - numRestricoes);
     escolherColunasAleatorias(A, numRestricoes, numVariaveis, B, N);
-    cout << "determinante:" << determinante(extraiColunas(A, B), B.size()) << endl;
-    cout << "Matriz B: " << endl;
+    
+    //cout << "escolheu as aleatorias" << endl;
+    cout << "B: ";
+    impremeVetor(B);
     imprimeMatriz(extraiColunas(A, B));
-    cout << "Matriz inversa: " << endl;
-    imprimeMatriz(inversa(extraiColunas(A, B)));
-    cout << "escolheu as aleatorias" << endl;
+    cout << "N: ";
+    impremeVetor(N);
+    imprimeMatriz(extraiColunas(A, N));
+    cout << endl << endl << "Fase II:" << endl << endl;
     faseII(A, B, N, b, c);
 
     cout << endl
