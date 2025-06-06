@@ -606,7 +606,6 @@ void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<in
         for (int i = 0; i < m; i++)
         {
             bool existe = true;
-            cout << "Escolhendo coluna " << i << endl;
             while (existe)
             {
                 ValBTemp = (rand() % n);
@@ -623,23 +622,17 @@ void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<in
             B[i] = ValBTemp;
             for (int j = 0; j < m; j++)
             {
-                cout << M[j][B[i]] << endl;
                 MatrizBasicaTemp[j][i] = M[j][B[i]];
             }
         }
         if (!contemConjunto(conjuntosTestados, B))
         {
             conjuntosTestados.push_back(B);
-            cout << "Matriz basica: " << endl;
-            imprimeMatriz(MatrizBasicaTemp);
-            cout << "det: " << determinante(MatrizBasicaTemp, m) << endl;
         }
     }
     int j = 0;
-    cout << "Valo M " << m << endl;
     for (int i = 0; i < n; i++)
     {
-        cout << i << endl;
         if (!contemValor(B, i) && !contemValor(N, i))
         {
             N[j] = i;
@@ -654,9 +647,6 @@ vector<double> calcSolucaoBasica(vector<vector<double>> A, vector<int> B, vector
     vector<double> solucaoBasica = alocaVetor<double>(A[0].size(), 0.0);
     vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
     vector<double> aux = multMatrizVetor(inversaB, B.size(), B.size(), b);
-    cout << "aux: ";
-    impremeVetor(aux);
-    impremeVetor(B);
     for (int i = 0; i < B.size(); i++)
     {
         solucaoBasica[B[i]] = aux[i];
@@ -676,69 +666,131 @@ double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> 
         custosBasica[i] = c[B[i]];
     }
     vetorMultiplicador = multVetorMatriz(custosBasica, custosBasica.size(), inversaB, B.size());
-    cout << "vetorMultiplicador: ";
-    impremeVetor(vetorMultiplicador);
     custosRelativos = alocaVetor<double>(N.size());
     for(int i = 0; i < N.size(); i++)
     {
         custosRelativos[i] = c[N[i]] - multVetor(vetorMultiplicador, pegaColuna(A, N[i]));
     }
-    cout << "Custos relativos: ";
-    impremeVetor(custosRelativos);
     double menor = menorValor(custosRelativos);
     for (int i = 0; i < custosRelativos.size(); i++)
     {
         if (custosRelativos[i] == menor)
         {
             varEntrada = i;
-            cout << "Variavel de entrada: " << N[varEntrada] << endl;
-            cout << "Custo relativo: " << menor << endl;
             break;
         }
     }
     return menor;
 }
 
+bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> &b, vector<double> &c)
+{
+    regex max("max");
+    smatch match;
+    regex_search(input, match, max);
+    if (!match.empty())
+    {
+        for(int i = 0; i < c.size(); i++)
+        {
+            c[i] = -c[i]; 
+        }
+    }
+    for(int i = 0; i < b.size(); i++)
+    {
+        if(b[i] < 0)
+        {
+            b[i] = -b[i];
+            for(int j = 0; j < A[i].size(); j++)
+            {
+                A[i][j] = -A[i][j];
+            }
+        }
+    }
+    int i = 0;
+    while (input[i] != '\n' && input[i] != '\0')
+    {
+        i++;
+    }
+    regex restricaoRegex("(>|>=|=)");
+    smatch matchRestricao;
+    regex_search(input.cbegin() + i, input.cend(), matchRestricao, restricaoRegex);
+    if (!matchRestricao.empty())
+    {
+        for (int j = 0; j < matchRestricao.size(); j++)
+        {
+            string op = matchRestricao.str(j);
+            if (op == "=") {
+                auto pos = matchRestricao.position(1) + i;
+                if (!(pos > 0 && (input[pos-1] == '<' || input[pos-1] == '>'))) {
+                    cout << "Necessita fase I" << endl;
+                    return true;
+                }
+            } else {
+                cout << "Necessita fase I" << endl;
+                return true;
+            }
+        }
+        
+    }
+    cout << "Nao necessita fase I" << endl;
+    return false;
+}
+
+void faseI(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> b, vector<double> c)
+{
+    cout << "Fase I: " << endl;
+    vector<double> solucaoBasica = alocaVetor<double>(A[0].size(), 0.0);
+    vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
+    solucaoBasica = calcSolucaoBasica(A, B, N, b);
+    cout << "Solução básica inicial: ";
+    impremeVetor(solucaoBasica);
+    
+    // Verifica se a solução é viável
+    if (vetorMenorZero(solucaoBasica))
+    {
+        throw runtime_error("Solução inviável.");
+        return;
+    }
+    
+    // Adiciona variáveis artificiais
+    for (int i = 0; i < B.size(); i++)
+    {
+        if (solucaoBasica[B[i]] < 0)
+        {
+            N.push_back(B[i]);
+            B[i] = c.size() + N.size() - 1; // Adiciona variável artificial
+            c.push_back(0); // Custo da variável artificial é zero
+        }
+    }
+    
+    cout << "Variáveis básicas: ";
+    impremeVetor(B);
+    cout << "Variáveis não básicas: ";
+    impremeVetor(N);
+}
+
 /**
  * Realiza a fase II do método Simplex.
  * @param A     [IN]  Matriz original.
- * @param B     [IN]  Vetor que armazenará as colunas da matriz basica.
- * @param N     [IN]  Vetor que armazenará as colunas da matriz não basica.
+ * @param B     [IN]  Vetor que armazena as colunas da matriz basica.
+ * @param N     [IN]  Vetor que armazena as colunas da matriz não basica.
  * @param b     [IN]  Vetor de recursos.
  * @param c     [IN]  Vetor de custos.
  */
 void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> b, vector<double> c)
 {
     vector<double> solucaoBasica, y;
-    
-   
     double custoRelativo = -1;
     int k = 0;
-    cout << "Antes" << endl;
+
     while (custoRelativo < 0)
     {   
-        cout << "pre-inversa" << endl;
-        imprimeMatriz(extraiColunas(A, B));
         vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
-        cout << endl << endl << "--------------------------" << endl;
-        cout << "Iteração: " << k << endl;
-        cout << "B: " << endl;
-        impremeVetor(B);
-        cout << "N: " << endl;
-        impremeVetor(N);
         solucaoBasica = calcSolucaoBasica(A, B, N, b);
-        cout << "solucao basica:";
-        impremeVetor(solucaoBasica);
         int variavelEntrada;
         custoRelativo = calcCustosRelativos(A, B, N, c, variavelEntrada);
-        cout << "Custo relativo: " << custoRelativo << endl;
         if (custoRelativo < 0){
-            cout << N[variavelEntrada] << endl;
-            impremeVetor(pegaColuna(A, N[variavelEntrada]));
-            imprimeMatriz(inversaB);
             y = multMatrizVetor(inversaB, B.size(), B.size(), pegaColuna(A, N[variavelEntrada]));
-            cout << "y: ";
-            impremeVetor(y);
             if(vetorMenorZero(y)){
                 throw runtime_error("Solução não é viável.");
                 return;
@@ -748,37 +800,26 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
             vector<double> aux = alocaVetor<double>(y.size());
             for (int i = 0; i < y.size(); i++)
             {   
-                cout << "------------------------" << endl;
-                cout << "menor antes: " << menor << endl;
                 if(y[i] > 0){
                     aux[i] = solucaoBasica[B[i]] / y[i];
-                    cout << "y " << y[i] << endl;
                     if (aux[i] < menor)
                     {
-                        cout << "aux " << aux[i] << endl;
                         menor = aux[i];
                         variavelSaida = i;
-                        cout << "menor = " << menor << endl;
-                        cout << "variavelSaida = " << variavelSaida << endl;
                     }
                 }
             }
-            cout << "aux 2" << endl;
-            impremeVetor(aux);
-            cout << "Variavel saida: " << B[variavelSaida] << "   indice: " << variavelSaida << endl;
-            cout << "Variavel entrada: " << N[variavelEntrada] << endl;
-            impremeVetor(B);
-            impremeVetor(N);
-            cout << B[variavelSaida] << " <- " << N[variavelEntrada] << endl;
-            cout << B[2] << endl;
-            cout << N[1] << endl;
             int varAux = B[variavelSaida];
             B[variavelSaida] = N[variavelEntrada];
             N[variavelEntrada] = varAux;
             k++;
+            /*
             cout << "Custo relativo: " << custoRelativo << endl;
+            cout << "Básica: " << endl;
             impremeVetor(B);
+            cout << "Não básica: " << endl;
             impremeVetor(N);
+            */
         }
     }
     
@@ -826,8 +867,10 @@ int main()
     cout << "N: ";
     impremeVetor(N);
     imprimeMatriz(extraiColunas(A, N));
-    cout << endl << endl << "Fase II:" << endl << endl;
-    faseII(A, B, N, b, c);
+    preFaseI(input, A, B, N, b, c);
+    faseI(A, B, N, b, c);
+    //cout << endl << endl << "Fase II:" << endl << endl;
+    //faseII(A, B, N, b, c);
 
     cout << endl
          << "B: " << endl;
