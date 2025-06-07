@@ -8,6 +8,12 @@
 
 using namespace std;
 
+/**
+ * Extrai uma coluna específica de uma matriz.
+ * @param A     [IN]  A matriz de onde a coluna será extraída.
+ * @param i     [IN]  O índice da coluna a ser extraída.
+ * @retval vector<double>  Retorna um vetor contendo os elementos da coluna.
+ */
 vector<double> pegaColuna(const vector<vector<double>>& A, int i) {
     vector<double> coluna(A.size());
     for (int j = 0; j < A.size(); ++j) {
@@ -16,6 +22,12 @@ vector<double> pegaColuna(const vector<vector<double>>& A, int i) {
     return coluna;
 }
 
+/**
+ * Extrai colunas específicas de uma matriz.
+ * @param A     [IN]  A matriz de onde as colunas serão extraídas.
+ * @param B     [IN]  Um vetor contendo os índices das colunas a serem extraídas.
+ * @retval vector<vector<double>>  Retorna uma matriz contendo as colunas extraídas.
+ */
 vector<vector<double>> extraiColunas(const vector<vector<double>> A, const vector<int> B) {
     vector<vector<double>> resultado(A.size(), vector<double>(B.size()));
     for (int i = 0; i < A.size(); ++i)
@@ -97,6 +109,7 @@ bool vetorMenorZero(vector<T> v)
     return true;
 }
 
+// Faz a impressão de uma matriz
 template <typename T>
 void imprimeMatriz(const vector<vector<T>> &M)
 {
@@ -110,6 +123,7 @@ void imprimeMatriz(const vector<vector<T>> &M)
     }
 }
 
+// Faz a impressão de um vetor
 template <typename T>
 void impremeVetor(const vector<T> &v)
 {
@@ -154,12 +168,11 @@ string lerTxt()
     ifstream file("input.txt");
     if (!file)
     {
-        cout << "num abriu :(" << endl;
+        throw runtime_error("Não foi possivel abrir o arquivo.");
     }
     string str, input;
     while (getline(file, str))
     {
-
         input += str;
         input.push_back('\n');
     }
@@ -641,7 +654,14 @@ void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<in
     }
 }
 
-
+/**
+ * Calcula a solução básica inicial.
+ * @param A     [IN]  Matriz original.
+ * @param B     [IN]  Vetor que armazena as colunas da matriz basica.
+ * @param N     [IN]  Vetor que armazena as colunas da matriz não basica.
+ * @param b     [IN]  Vetor de recursos.
+ * @retval vector<double>  Retorna a solução básica inicial.
+ */
 vector<double> calcSolucaoBasica(vector<vector<double>> A, vector<int> B, vector<int> N, vector<double> b)
 {
     vector<double> solucaoBasica = alocaVetor<double>(A[0].size(), 0.0);
@@ -656,6 +676,15 @@ vector<double> calcSolucaoBasica(vector<vector<double>> A, vector<int> B, vector
     return solucaoBasica;
 }
 
+/**
+ * Calcula os custos relativos e identifica a variável de entrada.
+ * @param A     [IN]  Matriz original.
+ * @param B     [IN]  Vetor que armazena as colunas da matriz basica.
+ * @param N     [IN]  Vetor que armazena as colunas da matriz não basica.
+ * @param c     [IN]  Vetor de custos.
+ * @param varEntrada [OUT]  Variável de entrada identificada.
+ * @retval double  Retorna o menor custo relativo encontrado.
+ */
 double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> N, vector<double> c, int &varEntrada)
 {
     vector<double> vetorMultiplicador, custosRelativos, custosBasica;
@@ -683,6 +712,16 @@ double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> 
     return menor;
 }
 
+/**
+ * Verifica se a fase I é necessária.
+ * @param input     [IN]  A string que possuí o input de onde os coeficientes serão lidos.
+ * @param A     [IN]  Matriz original.
+ * @param B     [IN]  Vetor que armazena as colunas da matriz basica.
+ * @param N     [IN]  Vetor que armazena as colunas da matriz não basica.
+ * @param b     [IN]  Vetor de recursos.
+ * @param c     [IN]  Vetor de custos.
+ * @retval bool  Retorna true se a fase I for necessária, false caso contrário.
+ */
 bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> &b, vector<double> &c)
 {
     regex max("max");
@@ -736,6 +775,14 @@ bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int
     return false;
 }
 
+/**
+ * Realiza a fase I do método Simplex.
+ * @param A     [IN]  Matriz original.
+ * @param B     [IN]  Vetor que armazena as colunas da matriz basica.
+ * @param N     [IN]  Vetor que armazena as colunas da matriz não basica.
+ * @param b     [IN]  Vetor de recursos.
+ * @param c     [IN]  Vetor de custos.
+ */
 void faseI(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> b, vector<double> c)
 {
     cout << "Fase I: " << endl;
