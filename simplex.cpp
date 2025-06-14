@@ -5,6 +5,7 @@
 #include <math.h>
 #include <map>
 #include <vector>
+#include <chrono>
 
 using namespace std;
 
@@ -14,9 +15,11 @@ using namespace std;
  * @param i     [IN]  O índice da coluna a ser extraída.
  * @retval vector<double>  Retorna um vetor contendo os elementos da coluna.
  */
-vector<double> pegaColuna(const vector<vector<double>>& A, int i) {
+vector<double> pegaColuna(const vector<vector<double>> &A, int i)
+{
     vector<double> coluna(A.size());
-    for (int j = 0; j < A.size(); ++j) {
+    for (int j = 0; j < A.size(); ++j)
+    {
         coluna[j] = A[j][i];
     }
     return coluna;
@@ -28,7 +31,8 @@ vector<double> pegaColuna(const vector<vector<double>>& A, int i) {
  * @param B     [IN]  Um vetor contendo os índices das colunas a serem extraídas.
  * @retval vector<vector<double>>  Retorna uma matriz contendo as colunas extraídas.
  */
-vector<vector<double>> extraiColunas(const vector<vector<double>> A, const vector<int> B) {
+vector<vector<double>> extraiColunas(const vector<vector<double>> A, const vector<int> B)
+{
     vector<vector<double>> resultado(A.size(), vector<double>(B.size()));
     for (int i = 0; i < A.size(); ++i)
         for (int j = 0; j < B.size(); ++j)
@@ -176,6 +180,14 @@ string lerTxt()
         input += str;
         input.push_back('\n');
     }
+    for (int i = 0; i < input.size(); i++)
+    {
+        if (input[i] == ' ')
+        {
+            input.erase(i, 1);
+            i--;
+        }
+    }
     return input;
 }
 
@@ -245,9 +257,9 @@ void calcularIJ(string input, int *i, int *j)
  */
 void lerCoeficientes(vector<vector<double>> &A, string input, int numRestricoes, int numVariaveis, vector<double> &b, vector<double> &c)
 {
-    regex termoRegex("(-?\\d*[.]?\\d*)x(\\d+)");
-    regex restricaoRegex("(<=|>=|<|>)");
-    regex valRestricao(("\\d+[.]?\\d*"));
+    regex termoRegex("(-?\\d*[.]?\\d*)x(\\d+)", regex::optimize);
+    regex restricaoRegex("(<=|>=|<|>)", regex::optimize);
+    regex valRestricao(("\\d+[.]?\\d*"), regex::optimize);
     smatch match;
     int linha = 0, k = 0, varFolga = 0;
 
@@ -672,7 +684,7 @@ vector<double> calcSolucaoBasica(vector<vector<double>> A, vector<int> B, vector
         solucaoBasica[B[i]] = aux[i];
     }
     int j = 0;
-    
+
     return solucaoBasica;
 }
 
@@ -696,7 +708,7 @@ double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> 
     }
     vetorMultiplicador = multVetorMatriz(custosBasica, custosBasica.size(), inversaB, B.size());
     custosRelativos = alocaVetor<double>(N.size());
-    for(int i = 0; i < N.size(); i++)
+    for (int i = 0; i < N.size(); i++)
     {
         custosRelativos[i] = c[N[i]] - multVetor(vetorMultiplicador, pegaColuna(A, N[i]));
     }
@@ -724,22 +736,22 @@ double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> 
  */
 bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> &b, vector<double> &c)
 {
-    regex max("max");
+    regex max("max", regex_constants::icase, regex::optimize);
     smatch match;
     regex_search(input, match, max);
     if (!match.empty())
     {
-        for(int i = 0; i < c.size(); i++)
+        for (int i = 0; i < c.size(); i++)
         {
-            c[i] = -c[i]; 
+            c[i] = -c[i];
         }
     }
-    for(int i = 0; i < b.size(); i++)
+    for (int i = 0; i < b.size(); i++)
     {
-        if(b[i] < 0)
+        if (b[i] < 0)
         {
             b[i] = -b[i];
-            for(int j = 0; j < A[i].size(); j++)
+            for (int j = 0; j < A[i].size(); j++)
             {
                 A[i][j] = -A[i][j];
             }
@@ -750,17 +762,23 @@ bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int
     {
         i++;
     }
-   regex restricaoRegex("(>=|>|=)");
+    regex restricaoRegex("(>=|>|=)", regex::optimize);
     auto it = input.cbegin();
-    while (regex_search(it, input.cend(), match, restricaoRegex)) {
+    it += i + 1;
+    while (regex_search(it, input.cend(), match, restricaoRegex))
+    {
         string op = match.str(1);
         size_t pos = match.position(1) + (it - input.cbegin());
-        if (op == "=") {
+        if (op == "=")
+        {
             // Verifica se não é parte de <= ou >=
-            if (!(pos > 0 && (input[pos - 1] == '<' || input[pos - 1] == '>'))) {
+            if (!(pos > 0 && (input[pos - 1] == '<' || input[pos - 1] == '>')))
+            {
                 return true; // '=' sozinho
             }
-        } else if (op == ">" || op == ">=") {
+        }
+        else if (op == ">" || op == ">=")
+        {
             return true;
         }
         it += match.position(0) + match.length(0);
@@ -779,6 +797,7 @@ bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int
 
 void faseI(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> b, vector<double> c)
 {
+    /*Fase 1 ta tudo errada
     cout << "Fase I (Simplex):" << endl;
 
     int m = b.size();
@@ -789,7 +808,7 @@ void faseI(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<doub
     vector<vector<double>> A_aux = A;
     vector<double> c_aux = alocaVetor<double>(n + m, 0.0);
     for (int i = n; i < n + m; ++i) {
-        c_aux[i] = 1.0; 
+        c_aux[i] = 1.0;
     }
 
     // Adiciona variáveis artificiais para cada restrição que não tem folga positiva
@@ -798,7 +817,6 @@ void faseI(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<doub
         for(int j = 0; j < m; ++j) {
             if (A_aux[i][j] < 0) {
                 A_aux[i].push_back(1.0); // Variável artificial
-                artificiais.push_back(n + j);
             } else {
                 A_aux[i].push_back(0.0); // Coluna de zeros
             }
@@ -892,8 +910,8 @@ void faseI(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<doub
     cout << "Fase I concluída. Solução básica viável encontrada." << endl;
     cout << "Básicas: "; impremeVetor(B);
     cout << "Não básicas: "; impremeVetor(N);
+    */
 }
-
 
 /**
  * Realiza a fase II do método Simplex.
@@ -910,14 +928,16 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
     int k = 0;
 
     while (custoRelativo < 0)
-    {   
+    {
         vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
         solucaoBasica = calcSolucaoBasica(A, B, N, b);
         int variavelEntrada;
         custoRelativo = calcCustosRelativos(A, B, N, c, variavelEntrada);
-        if (custoRelativo < 0){
+        if (custoRelativo < 0)
+        {
             y = multMatrizVetor(inversaB, B.size(), B.size(), pegaColuna(A, N[variavelEntrada]));
-            if(vetorMenorZero(y)){
+            if (vetorMenorZero(y))
+            {
                 throw runtime_error("Solução não é viável.");
                 return;
             }
@@ -925,8 +945,9 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
             int menor = INT16_MAX;
             vector<double> aux = alocaVetor<double>(y.size());
             for (int i = 0; i < y.size(); i++)
-            {   
-                if(y[i] > 0){
+            {
+                if (y[i] > 0)
+                {
                     aux[i] = solucaoBasica[B[i]] / y[i];
                     if (aux[i] < menor)
                     {
@@ -948,18 +969,21 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
             */
         }
     }
-    
+
     cout << "Solucao otima encontrada." << endl;
-    double solucaoOtima = 0;    
-    for(int i = 0; i < (B.size() + N.size()); i++){
+    double solucaoOtima = 0;
+    for (int i = 0; i < (B.size() + N.size()); i++)
+    {
         solucaoOtima += c[i] * solucaoBasica[i];
-        cout << "c[" << i << "] = " << c[i] << ", solucaoBasica[" << i << "] = " << solucaoBasica[i] << endl;
+        cout << "c[" << i << "] = " << c[i] << ", solucaoBasica[" << i << "] = " << solucaoBasica[i] << "  ";
     }
-    cout << "Solucao otima: " << solucaoOtima << endl;
+    cout << endl
+         << "Solucao otima: " << solucaoOtima << endl;
 }
 
 int main()
 {
+    auto start = std::chrono::high_resolution_clock::now();
     string input = lerTxt();
     int numVariaveis, numRestricoes;
     calcularIJ(input, &numVariaveis, &numRestricoes);
@@ -981,35 +1005,28 @@ int main()
     cout << endl
          << "Vetor b: " << endl;
     impremeVetor(b);
-    cout << endl << "-------------------------" << endl;
+    cout << endl
+         << "-------------------------" << endl;
 
     vector<int> B(numRestricoes), N(numVariaveis - numRestricoes);
 
-    if(preFaseI(input, A, B, N, b, c)) {
+    if (preFaseI(input, A, B, N, b, c))
+    {
         cout << "Fase I necessaria." << endl;
         faseI(A, B, N, b, c);
-    } else {
+    }
+    else
+    {
         cout << "Fase I nao necessaria." << endl;
         escolherColunasAleatorias(A, numRestricoes, numVariaveis, B, N);
     }
     faseII(A, B, N, b, c);
 
     /*
-    escolherColunasAleatorias(A, numRestricoes, numVariaveis, B, N);
-    
-    cout << "escolheu as aleatorias" << endl;
-    cout << "B: ";
-    impremeVetor(B);
-    imprimeMatriz(extraiColunas(A, B));
-    cout << "N: ";
-    impremeVetor(N);
-    imprimeMatriz(extraiColunas(A, N));
     preFaseI(input, A, B, N, b, c);
-    faseI(A, B, N, b, c);
-    //cout << endl << endl << "Fase II:" << endl << endl;
-    //faseII(A, B, N, b, c);
+    escolherColunasAleatorias(A, numRestricoes, numVariaveis, B, N);
+    faseII(A, B, N, b, c);
     */
-
     cout << endl
          << "B: " << endl;
     impremeVetor(B);
@@ -1017,54 +1034,9 @@ int main()
     cout << "N: " << endl;
     impremeVetor(N);
     cout << endl;
-    cout << "Caralhoooo" << endl;
-    /*
-    vector<vector<double>> M = alocaMatriz<double>(3, 3);
-    M[0][0] = 2;
-    M[0][1] = 1;
-    M[0][2] = 4;
-    M[1][0] = 0;
-    M[1][1] = 2;
-    M[1][2] = 1;
-    M[2][0] = 3;
-    M[2][1] = 0;
-    M[2][2] = 5;
-    cout << determinante(M, 3) << endl;
 
-    vector<vector<double>> Ml;
-
-    Ml = inversa(M, 3);
-    imprimeMatriz(M);
-
-    cout << endl << endl << "inversa: " << endl;
-
-    imprimeMatriz(Ml);
-
-    cout << "Jean" << endl << endl << endl;
-    vector<vector<double>> I;
-    cout << "Jean1.5" << endl << endl << endl;
-    I = alocaMatriz<double>(3, 3, 0.0);
-    cout << "Jean2" << endl << endl << endl;
-    I[0][0] = 1.0;
-    I[1][1] = 1.0;
-    I[2][2] = 1.0;
-
-    cout << "biava" << endl;
-    M = multMatriz(M, 3, 3, I, 3);
-
-    cout << "tashuka" << endl;
-    imprimeMatriz(M);
-
-
-
-    vector<vector<double>> N = alocaMatriz<double>(2, 2);
-    N[0][0] = 1;
-    N[0][1] = 5;
-    N[1][0] = 2;
-    N[1][1] = 3;
-    cout << determinante(N, 2) << endl;
-    vector<vector<double>> F = alocaMatriz<double>(2, 2);
-    cout << "foi" << endl;
-    */
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "Tempo demorado: " << duration.count() << " microsegundos" << std::endl;
     return 0;
 }
