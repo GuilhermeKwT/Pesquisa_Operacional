@@ -1,13 +1,25 @@
 #include <iostream>
 #include <fstream>
 #include <regex>
-#include <sstream>
-#include <math.h>
-#include <map>
 #include <vector>
 #include <chrono>
 
 using namespace std;
+
+double fabs(double x)
+{
+    return (x < 0) ? -x : x;
+}
+
+double pow(double base, int exp)
+{
+    double result = 1.0;
+    for (int i = 0; i < exp; i++)
+    {
+        result *= base;
+    }
+    return result;
+}
 
 /**
  * Extrai uma coluna específica de uma matriz.
@@ -611,6 +623,13 @@ vector<vector<double>> inversa(vector<vector<double>> M)
     return I;
 }
 
+int fatorial(int n)
+{
+    if (n <= 1)
+        return 1;
+    return n * fatorial(n - 1);
+}
+
 /**
  * Escolhe colunas aleatórias para formar a matriz básica.
  * @param M     [IN]  Matriz original.
@@ -623,9 +642,9 @@ void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<in
 {
     vector<vector<double>> MatrizBasicaTemp = alocaMatriz<double>(m, m, 0.0);
     vector<vector<int>> conjuntosTestados = alocaMatriz<int>(n, m);
-    int ValBTemp;
+    int ValBTemp, count = 0, fatorialMax = fatorial(n) / (fatorial(m) * fatorial(n - m));
 
-    while (determinante(MatrizBasicaTemp, m) == 0)
+    while (determinante(MatrizBasicaTemp, m) == 0 && count < fatorialMax)
     {
         vector<int> BTemp(m, -1);
         for (int i = 0; i < m; i++)
@@ -654,6 +673,7 @@ void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<in
         {
             conjuntosTestados.push_back(B);
         }
+        count++;
     }
     int j = 0;
     for (int i = 0; i < n; i++)
@@ -983,7 +1003,8 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
 
 int main()
 {
-    auto start = std::chrono::high_resolution_clock::now();
+    auto start = chrono::high_resolution_clock::now();
+    srand(time(0));
     string input = lerTxt();
     int numVariaveis, numRestricoes;
     calcularIJ(input, &numVariaveis, &numRestricoes);
@@ -1022,11 +1043,6 @@ int main()
     }
     faseII(A, B, N, b, c);
 
-    /*
-    preFaseI(input, A, B, N, b, c);
-    escolherColunasAleatorias(A, numRestricoes, numVariaveis, B, N);
-    faseII(A, B, N, b, c);
-    */
     cout << endl
          << "B: " << endl;
     impremeVetor(B);
@@ -1035,8 +1051,8 @@ int main()
     impremeVetor(N);
     cout << endl;
 
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Tempo demorado: " << duration.count() << " microsegundos" << std::endl;
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
+    cout << "Tempo demorado: " << duration.count() << " microsegundos" << endl;
     return 0;
 }
