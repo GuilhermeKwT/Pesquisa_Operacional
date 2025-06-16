@@ -6,11 +6,20 @@
 
 using namespace std;
 
+/**
+ * @file simplex.cpp
+ * @brief Implementação do método Simplex para resolução de problemas de programação linear.
+ * @author Guilherme Kwaczynski Trajanoski
+ * @date 2025
+ */
+
+// Calcula o valor absoluto de um número.
 double fabs(double x)
 {
     return (x < 0) ? -x : x;
 }
 
+// Calcula a potência de um número.
 double pow(double base, int exp)
 {
     double result = 1.0;
@@ -297,7 +306,6 @@ void lerCoeficientes(vector<vector<double>> &A, string input, int numRestricoes,
         it = match.suffix().first;
     }
 
-    // Inicializa com zeros
     for (int i = 0; i < numRestricoes; i++)
     {
         for (int j = 0; j < numVariaveis; j++)
@@ -308,14 +316,13 @@ void lerCoeficientes(vector<vector<double>> &A, string input, int numRestricoes,
 
     while (linha < numRestricoes)
     {
-        // Separa a restrição
         string restricao;
         while (input[k] != '\n' && input[k] != '\0')
         {
             restricao.push_back(input[k]);
             k++;
         }
-        k++; // Pular o '\n'
+        k++;
 
         auto it = restricao.cbegin();
         while (regex_search(it, restricao.cend(), match, termoRegex))
@@ -326,13 +333,11 @@ void lerCoeficientes(vector<vector<double>> &A, string input, int numRestricoes,
             it = match.suffix().first;
         }
 
-        // Separa os valores de b da restrição
         if (regex_search(it, restricao.cend(), match, valRestricao))
         {
             b[linha] = stod(match.str());
         }
 
-        // Detecta o tipo da inequação e define variável de folga
         if (regex_search(restricao, match, restricaoRegex))
         {
             string sinal = match.str(1);
@@ -343,7 +348,7 @@ void lerCoeficientes(vector<vector<double>> &A, string input, int numRestricoes,
             else if (sinal == ">=" || sinal == ">")
             {
                 A[linha][calcularNumVariaveis(input) + varFolga] = -1.0;
-            } // Para '=' não adiciona nada (já está inicializado com zero)
+            }
             varFolga++;
         }
 
@@ -574,13 +579,13 @@ vector<vector<double>> inversa(vector<vector<double>> M)
     int n = M.size();
     vector<vector<double>> I = alocaMatriz<double>(n, n, 0.0);
 
-    // Inicializa a matriz identidade
     for (int i = 0; i < n; i++)
+    {
         I[i][i] = 1.0;
+    }
 
     for (int i = 0; i < n; i++)
     {
-        // Procura o maior elemento na coluna para evitar divisão por zero
         double maxEl = fabs(M[i][i]);
         int maxRow = i;
         for (int k = i + 1; k < n; k++)
@@ -592,13 +597,13 @@ vector<vector<double>> inversa(vector<vector<double>> M)
             }
         }
         if (fabs(maxEl) == 0.0)
+        {
             throw runtime_error("Matriz singular, não possui inversa.");
+        }
 
-        // Troca as linhas na matriz original e na identidade
         swap(M[i], M[maxRow]);
         swap(I[i], I[maxRow]);
 
-        // Divide a linha pelo pivô
         double piv = M[i][i];
         for (int j = 0; j < n; j++)
         {
@@ -606,7 +611,6 @@ vector<vector<double>> inversa(vector<vector<double>> M)
             I[i][j] /= piv;
         }
 
-        // Elimina os outros elementos da coluna
         for (int k = 0; k < n; k++)
         {
             if (k != i)
@@ -673,6 +677,8 @@ void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<in
         {
             conjuntosTestados.push_back(B);
         }
+        cout << "Tentativa " << count + 1 << ": Colunas escolhidas: ";
+        impremeVetor(B);
         count++;
     }
     int j = 0;
@@ -756,7 +762,7 @@ double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> 
  */
 bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> &b, vector<double> &c)
 {
-    regex max("max", regex_constants::icase, regex::optimize);
+    regex max("(max|Max|MAX)", regex::optimize);
     smatch match;
     regex_search(input, match, max);
     if (!match.empty())
@@ -791,10 +797,9 @@ bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int
         size_t pos = match.position(1) + (it - input.cbegin());
         if (op == "=")
         {
-            // Verifica se não é parte de <= ou >=
             if (!(pos > 0 && (input[pos - 1] == '<' || input[pos - 1] == '>')))
             {
-                return true; // '=' sozinho
+                return true;
             }
         }
         else if (op == ">" || op == ">=")
@@ -814,7 +819,6 @@ bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int
  * @param b     [IN]  Vetor de recursos.
  * @param c     [IN]  Vetor de custos.
  */
-
 void faseI(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> b, vector<double> c)
 {
     /*Fase 1 ta tudo errada
@@ -986,36 +990,47 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
             impremeVetor(B);
             cout << "Não básica: " << endl;
             impremeVetor(N);
-            */
+            cout << "Iteração: " << k << endl
+                 << "Variável de entrada: x" << N[variavelEntrada] + 1 << endl
+                 << "Variável de saída: x" << B[variavelSaida] + 1 << endl
+                 << "--------------------------" << endl;
+                 */
         }
     }
 
-    cout << "Solucao otima encontrada." << endl;
+    cout << "--------------------------" << endl
+         << "Solucao otima encontrada." << endl
+         << "Iteracoes: " << k << endl
+         << endl
+         << "x = [";
+
     double solucaoOtima = 0;
     for (int i = 0; i < (B.size() + N.size()); i++)
     {
         solucaoOtima += c[i] * solucaoBasica[i];
-        cout << "c[" << i << "] = " << c[i] << ", solucaoBasica[" << i << "] = " << solucaoBasica[i] << "  ";
+        cout << solucaoBasica[i];
+        (i < B.size() + N.size() - 1) ? cout << ", " : cout << "]" << endl;
     }
-    cout << endl
-         << "Solucao otima: " << solucaoOtima << endl;
+    cout << "Solucao otima: " << solucaoOtima << endl
+         << "--------------------------" << endl;
 }
 
 int main()
 {
     auto start = chrono::high_resolution_clock::now();
-    srand(time(0));
+    srand(time(NULL));
     string input = lerTxt();
     int numVariaveis, numRestricoes;
     calcularIJ(input, &numVariaveis, &numRestricoes);
 
-    cout << input << endl;
+    // cout << input << endl;
 
     vector<vector<double>> A = alocaMatriz<double>(numRestricoes, numVariaveis);
     vector<double> b(numRestricoes), c(numVariaveis);
 
     lerCoeficientes(A, input, numRestricoes, numVariaveis, b, c);
 
+    cout << "-------------------------" << endl;
     cout << "Vetor c: " << endl;
     impremeVetor(c);
 
@@ -1026,12 +1041,12 @@ int main()
     cout << endl
          << "Vetor b: " << endl;
     impremeVetor(b);
-    cout << endl
-         << "-------------------------" << endl;
+    cout << "-------------------------" << endl
+         << endl;
 
     vector<int> B(numRestricoes), N(numVariaveis - numRestricoes);
-
-    if (preFaseI(input, A, B, N, b, c))
+    bool faseInecessaria = preFaseI(input, A, B, N, b, c);
+    if (faseInecessaria)
     {
         cout << "Fase I necessaria." << endl;
         faseI(A, B, N, b, c);
