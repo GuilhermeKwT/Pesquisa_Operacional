@@ -6,6 +6,9 @@
 
 using namespace std;
 
+using Matriz = vector<vector<double>>;
+using Vetor = vector<double>;
+
 /**
  * @file simplex.cpp
  * @brief Implementação do método Simplex para resolução de problemas de programação linear.
@@ -24,9 +27,7 @@ double pow(double base, int exp)
 {
     double result = 1.0;
     for (int i = 0; i < exp; i++)
-    {
         result *= base;
-    }
     return result;
 }
 
@@ -36,13 +37,11 @@ double pow(double base, int exp)
  * @param i     [IN]  O índice da coluna a ser extraída.
  * @retval vector<double>  Retorna um vetor contendo os elementos da coluna.
  */
-vector<double> pegaColuna(const vector<vector<double>> &A, int i)
+Vetor pegaColuna(const Matriz &A, int i)
 {
-    vector<double> coluna(A.size());
-    for (int j = 0; j < A.size(); ++j)
-    {
+    Vetor coluna(A.size());
+    for (size_t j = 0; j < A.size(); ++j)
         coluna[j] = A[j][i];
-    }
     return coluna;
 }
 
@@ -52,12 +51,12 @@ vector<double> pegaColuna(const vector<vector<double>> &A, int i)
  * @param B     [IN]  Um vetor contendo os índices das colunas a serem extraídas.
  * @retval vector<vector<double>>  Retorna uma matriz contendo as colunas extraídas.
  */
-vector<vector<double>> extraiColunas(const vector<vector<double>> A, const vector<int> B)
+Matriz extraiColunas(const Matriz A, const vector<int> C)
 {
-    vector<vector<double>> resultado(A.size(), vector<double>(B.size()));
-    for (int i = 0; i < A.size(); ++i)
-        for (int j = 0; j < B.size(); ++j)
-            resultado[i][j] = A[i][B[j]];
+    Matriz resultado(A.size(), Vetor(C.size()));
+    for (size_t i = 0; i < A.size(); ++i)
+        for (size_t j = 0; j < C.size(); ++j)
+            resultado[i][j] = A[i][C[j]];
     return resultado;
 }
 
@@ -69,31 +68,9 @@ vector<vector<double>> extraiColunas(const vector<vector<double>> A, const vecto
  */
 bool contemValor(vector<int> v, int valor)
 {
-    for (int i = 0; i < v.size(); i++)
-    {
+    for (size_t i = 0; i < v.size(); i++)
         if (v[i] == valor)
-        {
             return true;
-        }
-    }
-    return false;
-}
-
-/**
- * Verifica se um vetor contém um conjunto específico.
- * @param v     [IN]  O vetor a ser verificado.
- * @param conjunto [IN]  O conjunto a ser procurado.
- * @retval bool  Retorna true se o conjunto estiver presente, false caso contrário.
- */
-bool contemConjunto(vector<vector<int>> v, vector<int> conjunto)
-{
-    for (int i = 0; i < v.size(); i++)
-    {
-        if (v[i] == conjunto)
-        {
-            return true;
-        }
-    }
     return false;
 }
 
@@ -106,13 +83,9 @@ template <typename T>
 T menorValor(vector<T> v)
 {
     T menor = v[0];
-    for (int i = 1; i < v.size(); i++)
-    {
+    for (size_t i = 1; i < v.size(); i++)
         if (v[i] < menor)
-        {
             menor = v[i];
-        }
-    }
     return menor;
 }
 
@@ -124,13 +97,9 @@ T menorValor(vector<T> v)
 template <typename T>
 bool vetorMenorZero(vector<T> v)
 {
-    for (int i = 0; i < v.size(); i++)
-    {
+    for (size_t i = 0; i < v.size(); i++)
         if (v[i] > 0)
-        {
             return false;
-        }
-    }
     return true;
 }
 
@@ -138,12 +107,9 @@ bool vetorMenorZero(vector<T> v)
 template <typename T>
 void imprimeMatriz(const vector<vector<T>> &M)
 {
-    for (const auto &row : M)
-    {
+    for (const auto &row : M){
         for (const auto &elem : row)
-        {
             cout << '\t' << elem;
-        }
         cout << endl;
     }
 }
@@ -153,38 +119,8 @@ template <typename T>
 void impremeVetor(const vector<T> &v)
 {
     for (const auto &elem : v)
-    {
         cout << elem << " ";
-    }
     cout << endl;
-}
-
-// Faz a alocação de uma matriz
-template <typename T>
-vector<vector<T>> alocaMatriz(int m, int n)
-{
-    return vector<vector<T>>(m, vector<T>(n));
-}
-
-// Faz a alocação de uma matriz inicializada com um valor especifico
-template <typename T>
-vector<vector<T>> alocaMatriz(int m, int n, T x)
-{
-    return vector<vector<T>>(m, vector<T>(n, x));
-}
-
-// Faz a alocação de um vetor
-template <typename T>
-vector<T> alocaVetor(int n)
-{
-    return vector<T>(n);
-}
-
-// Faz a alocação de um vetor
-template <typename T>
-vector<T> alocaVetor(int n, T x)
-{
-    return vector<T>(n, x);
 }
 
 // Faz a leitura do arquivo de entrada e o coloca em uma string com as linhas dividadas por \n
@@ -201,7 +137,7 @@ string lerTxt()
         input += str;
         input.push_back('\n');
     }
-    for (int i = 0; i < input.size(); i++)
+    for (size_t i = 0; i < input.size(); i++)
     {
         if (input[i] == ' ')
         {
@@ -217,15 +153,11 @@ int calcularNumVariaveis(string input)
 {
     int i = 0, num = 0;
     while (input[i] != '=')
-    {
         i++;
-    }
     while (input[i] != '\n')
     {
         if (input[i] == 'x')
-        {
             num++;
-        }
         i++;
     }
     return num;
@@ -244,9 +176,7 @@ void calcularIJ(string input, int *i, int *j)
     (*j) = 0;
 
     while (input[k] != '\n')
-    {
         k++;
-    }
 
     while (input[k] != '\0')
     {
@@ -255,9 +185,7 @@ void calcularIJ(string input, int *i, int *j)
             (*i)++;
             (*j)++;
             if (input[k + 1] == '=')
-            {
                 k++;
-            }
         }
         else if (input[k] == '=')
         {
@@ -276,7 +204,7 @@ void calcularIJ(string input, int *i, int *j)
  * @param b    [OUT]  O vetor de recursos.
  * @param c    [OUT]  O vetor de custos.
  */
-void lerCoeficientes(vector<vector<double>> &A, string input, int numRestricoes, int numVariaveis, vector<double> &b, vector<double> &c)
+void lerCoeficientes(Matriz &A, string input, int numRestricoes, int numVariaveis, Vetor &b, Vetor &c)
 {
     regex termoRegex("(-?\\d*[.]?\\d*)x(\\d+)", regex::optimize);
     regex restricaoRegex("(<=|>=|<|>)", regex::optimize);
@@ -293,9 +221,7 @@ void lerCoeficientes(vector<vector<double>> &A, string input, int numRestricoes,
     k++;
 
     for (int i = 0; i < numVariaveis; i++)
-    {
         c[i] = 0;
-    }
 
     auto it = custos.cbegin();
     while (regex_search(it, custos.cend(), match, termoRegex))
@@ -307,12 +233,8 @@ void lerCoeficientes(vector<vector<double>> &A, string input, int numRestricoes,
     }
 
     for (int i = 0; i < numRestricoes; i++)
-    {
         for (int j = 0; j < numVariaveis; j++)
-        {
             A[i][j] = 0;
-        }
-    }
 
     while (linha < numRestricoes)
     {
@@ -334,15 +256,13 @@ void lerCoeficientes(vector<vector<double>> &A, string input, int numRestricoes,
         }
 
         if (regex_search(it, restricao.cend(), match, valRestricao))
-        {
             b[linha] = stod(match.str());
-        }
 
         if (regex_search(restricao, match, restricaoRegex))
         {
             string sinal = match.str(1);
             if (sinal == "<=" || sinal == "<")
-            {
+            {   
                 A[linha][calcularNumVariaveis(input) + varFolga] = 1.0;
             }
             else if (sinal == ">=" || sinal == ">")
@@ -365,9 +285,9 @@ void lerCoeficientes(vector<vector<double>> &A, string input, int numRestricoes,
  * @retval **R  Matriz reduzida resultante.
  */
 template <typename T>
-vector<vector<T>> matrizParcial(vector<vector<T>> M, int n, vector<int> i, vector<int> j)
+vector<vector<T>> submatriz(vector<vector<T>> M, int n, vector<int> i, vector<int> j)
 {
-    vector<vector<T>> R = alocaMatriz<T>(n - 1, n - 1);
+    vector<vector<T>> R((n - 1), vector<T>((n - 1)));
 
     int linha = 0;
     for (int k = 0; k < n; k++)
@@ -390,70 +310,12 @@ vector<vector<T>> matrizParcial(vector<vector<T>> M, int n, vector<int> i, vecto
 }
 
 /**
- * Separa uma submatriz de tamanho n-1 x n-1 da matriz M, removendo apenas as colunas.
- * @param M     [IN]  Matriz original.
- * @param n     [IN]  Tamanho da matriz original.
- * @param j     [IN]  Colunas para serem removidas.
- * @retval **R  Matriz reduzida resultante.
- */
-template <typename T>
-vector<vector<T>> matrizParcialColuna(vector<vector<T>> M, int n, vector<int> j)
-{
-    vector<vector<T>> R = alocaMatriz<T>(n - 1, n - 1);
-
-    int linha = 0;
-    for (int k = 0; k < n; k++)
-    {
-        int coluna = 0;
-        for (int q = 0; q < n; q++)
-        {
-            if (!contemValor(j, q))
-            {
-                R[linha][coluna] = M[k][q];
-                coluna++;
-            }
-        }
-        linha++;
-    }
-    return R;
-}
-
-/**
- * Separa uma submatriz de tamanho n-1 x n-1 da matriz M, removendo apenas as linhas.
- * @param M     [IN]  Matriz original.
- * @param n     [IN]  Tamanho da matriz original.
- * @param i     [IN]  Linhas para serem removidas.
- * @retval **R  Matriz reduzida resultante.
- */
-template <typename T>
-vector<vector<T>> matrizParcialLinha(vector<vector<T>> M, int n, vector<int> i)
-{
-    vector<vector<T>> R = alocaMatriz<T>(n - 1, n - 1);
-
-    int linha = 0;
-    for (int k = 0; k < n; k++)
-    {
-        if (!contemValor(i, k))
-        {
-            int coluna = 0;
-            for (int q = 0; q < n; q++)
-            {
-                R[linha][coluna] = M[k][q];
-                coluna++;
-            }
-            linha++;
-        }
-    }
-    return R;
-}
-
-/**
  * Realiza o cálculo do determinante de uma matriz quadrada.
  * @param M     [IN]  Matriz que será usada para o cálculo.
  * @param n     [IN]  Tamanho da matriz.
  * @retval double  Resultado do determinante.
  */
-double determinante(vector<vector<double>> M, int n)
+double determinante(Matriz M, int n)
 {
     if (n == 1)
     {
@@ -462,7 +324,7 @@ double determinante(vector<vector<double>> M, int n)
     else
     {
         double result = 0;
-        vector<vector<double>> matrizP;
+        Matriz matrizP;
         int i = 0;
 
         for (int j = 0; j < n; j++)
@@ -470,7 +332,7 @@ double determinante(vector<vector<double>> M, int n)
             vector<int> linhas, colunas;
             linhas.push_back(i);
             colunas.push_back(j);
-            matrizP = matrizParcial(M, n, linhas, colunas);
+            matrizP = submatriz(M, n, linhas, colunas);
             result += pow(-1, i + j) * M[i][j] * determinante(matrizP, n - 1);
         }
 
@@ -479,77 +341,32 @@ double determinante(vector<vector<double>> M, int n)
 }
 
 /**
- * Realiza a multiplicação de duas matrizes.
- * @param A     [IN]  Matriz A.
- * @param lA    [IN]  Número de linhas da matriz A.
- * @param cA    [IN]  Número de colunas da matriz A.
- * @param B     [IN]  Matriz B.
- * @param cB    [IN]  Número de colunas da matriz B.
- * @retval **R  Matriz resultante da multiplicação.
- */
-vector<vector<double>> multMatriz(vector<vector<double>> A, int lA, int cA, vector<vector<double>> B, int cB)
-{
-    vector<vector<double>> matrizFinal;
-    matrizFinal = alocaMatriz<double>(lA, cB);
-    for (int i = 0; i < lA; i++)
-    {
-        for (int j = 0; j < cB; j++)
-        {
-            double somaMult = 0;
-            for (int k = 0; k < cA; k++)
-            {
-                somaMult = somaMult + (A[i][k] * B[k][j]);
-            }
-            matrizFinal[i][j] = somaMult;
-        }
-    }
-    return matrizFinal;
-}
-
-/**
  * Realiza a multiplicação de uma matriz por um vetor.
  * @param A     [IN]  Matriz A.
- * @param lA    [IN]  Número de linhas da matriz A.
- * @param cA    [IN]  Número de colunas da matriz A.
  * @param B     [IN]  Vetor B.
  * @retval **R  Vetor resultante da multiplicação.
  */
-vector<double> multMatrizVetor(vector<vector<double>> A, int lA, int cA, vector<double> B)
+Vetor multMatrizVetor(Matriz A, Vetor B)
 {
-    vector<double> vetorFinal = alocaVetor<double>(lA);
-    for (int i = 0; i < lA; i++)
-    {
-        double somaMult = 0;
-        for (int k = 0; k < cA; k++)
-        {
-            somaMult = somaMult + (A[i][k] * B[k]);
-        }
-        vetorFinal[i] = somaMult;
-    }
+    Vetor vetorFinal(A.size(), 0);
+    for (size_t i = 0; i < A.size(); i++)
+        for (size_t k = 0; k < B.size(); k++)
+            vetorFinal[i] += A[i][k] * B[k];
     return vetorFinal;
 }
 
 /**
  * Realiza a multiplicação de um vetor por uma matriz.
  * @param A     [IN]  Vetor A.
- * @param cA    [IN]  Número de colunas do vetor A.
  * @param B     [IN]  Matriz B.
- * @param cB    [IN]  Número de colunas da matriz B.
  * @retval **R  Vetor resultante da multiplicação.
  */
-vector<double> multVetorMatriz(vector<double> A, int cA, vector<vector<double>> B, int cB)
+Vetor multVetorMatriz(Vetor A, Matriz B)
 {
-    vector<double> vetorFinal = alocaVetor<double>(cA);
-
-    for (int j = 0; j < cB; j++)
-    {
-        double somaMult = 0;
-        for (int k = 0; k < cA; k++)
-        {
-            somaMult = somaMult + (A[k] * B[k][j]);
-        }
-        vetorFinal[j] = somaMult;
-    }
+    Vetor vetorFinal(A.size());
+    for (size_t j = 0; j < B[0].size(); j++)
+        for (size_t k = 0; k < A.size(); k++)
+            vetorFinal[j] += A[k] * B[k][j];
     return vetorFinal;
 }
 
@@ -559,13 +376,11 @@ vector<double> multVetorMatriz(vector<double> A, int cA, vector<vector<double>> 
  * @param B     [IN]  Vetor B.
  * @retval double  Resultado da multiplicação.
  */
-double multVetor(vector<double> A, vector<double> B)
+double produtoEscalar(Vetor A, Vetor B)
 {
     double somaMult = 0;
-    for (int i = 0; i < A.size(); i++)
-    {
+    for (size_t i = 0; i < A.size(); i++)
         somaMult += A[i] * B[i];
-    }
     return somaMult;
 }
 
@@ -574,15 +389,13 @@ double multVetor(vector<double> A, vector<double> B)
  * @param M     [IN]  Matriz a ser invertida.
  * @retval **R  Matriz inversa resultante.
  */
-vector<vector<double>> inversa(vector<vector<double>> M)
+Matriz inversa(Matriz M)
 {
     int n = M.size();
-    vector<vector<double>> I = alocaMatriz<double>(n, n, 0.0);
+    Matriz I(n, Vetor(n, 0));
 
     for (int i = 0; i < n; i++)
-    {
         I[i][i] = 1.0;
-    }
 
     for (int i = 0; i < n; i++)
     {
@@ -597,9 +410,7 @@ vector<vector<double>> inversa(vector<vector<double>> M)
             }
         }
         if (fabs(maxEl) == 0.0)
-        {
             throw runtime_error("Matriz singular, não possui inversa.");
-        }
 
         swap(M[i], M[maxRow]);
         swap(I[i], I[maxRow]);
@@ -642,10 +453,10 @@ int fatorial(int n)
  * @param B     [OUT]  Vetor que armazenará as colunas da matriz basica.
  * @param N     [OUT]  Vetor que armazenará as colunas da matriz não basica.
  */
-void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<int> &B, vector<int> &N)
+void escolherColunasAleatorias(Matriz M, int m, int n, vector<int> &B, vector<int> &N)
 {
-    vector<vector<double>> MatrizBasicaTemp = alocaMatriz<double>(m, m, 0.0);
-    vector<vector<int>> conjuntosTestados = alocaMatriz<int>(n, m);
+    Matriz MatrizBasicaTemp(m, Vetor(m, 0));
+    Matriz conjuntosTestados(n, Vetor(m));
     int ValBTemp, count = 0, fatorialMax = fatorial(n) / (fatorial(m) * fatorial(n - m));
 
     while (determinante(MatrizBasicaTemp, m) == 0 && count < fatorialMax)
@@ -669,14 +480,13 @@ void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<in
             BTemp[i] = ValBTemp;
             B[i] = ValBTemp;
             for (int j = 0; j < m; j++)
-            {
                 MatrizBasicaTemp[j][i] = M[j][B[i]];
-            }
         }
-        if (!contemConjunto(conjuntosTestados, B))
-        {
-            conjuntosTestados.push_back(B);
-        }
+        // Tem que refazer
+        //if (!contemConjunto(conjuntosTestados, B))
+        //{
+        //    conjuntosTestados.push_back(B);
+        //}
         cout << "Tentativa " << count + 1 << ": Colunas escolhidas: ";
         impremeVetor(B);
         count++;
@@ -700,17 +510,13 @@ void escolherColunasAleatorias(vector<vector<double>> M, int m, int n, vector<in
  * @param b     [IN]  Vetor de recursos.
  * @retval vector<double>  Retorna a solução básica inicial.
  */
-vector<double> calcSolucaoBasica(vector<vector<double>> A, vector<int> B, vector<int> N, vector<double> b)
+Vetor calcSolucaoBasica(Matriz A, vector<int> B, Vetor b)
 {
-    vector<double> solucaoBasica = alocaVetor<double>(A[0].size(), 0.0);
-    vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
-    vector<double> aux = multMatrizVetor(inversaB, B.size(), B.size(), b);
-    for (int i = 0; i < B.size(); i++)
-    {
+    Vetor solucaoBasica(A[0].size(), 0);
+    Matriz inversaB = inversa(extraiColunas(A, B));
+    Vetor aux = multMatrizVetor(inversaB, b);
+    for (size_t i = 0; i < B.size(); i++)
         solucaoBasica[B[i]] = aux[i];
-    }
-    int j = 0;
-
     return solucaoBasica;
 }
 
@@ -723,23 +529,17 @@ vector<double> calcSolucaoBasica(vector<vector<double>> A, vector<int> B, vector
  * @param varEntrada [OUT]  Variável de entrada identificada.
  * @retval double  Retorna o menor custo relativo encontrado.
  */
-double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> N, vector<double> c, int &varEntrada)
+double calcCustosRelativos(Matriz A, vector<int> B, vector<int> N, Vetor c, int &varEntrada)
 {
-    vector<double> vetorMultiplicador, custosRelativos, custosBasica;
-    vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
-    custosBasica = alocaVetor<double>(B.size());
-    for (int i = 0; i < B.size(); i++)
-    {
+    Vetor vetorMultiplicador, custosRelativos(N.size()), custosBasica(B.size());
+    Matriz inversaB = inversa(extraiColunas(A, B));
+    for (size_t i = 0; i < B.size(); i++)
         custosBasica[i] = c[B[i]];
-    }
-    vetorMultiplicador = multVetorMatriz(custosBasica, custosBasica.size(), inversaB, B.size());
-    custosRelativos = alocaVetor<double>(N.size());
-    for (int i = 0; i < N.size(); i++)
-    {
-        custosRelativos[i] = c[N[i]] - multVetor(vetorMultiplicador, pegaColuna(A, N[i]));
-    }
+    vetorMultiplicador = multVetorMatriz(custosBasica, inversaB);
+    for (size_t i = 0; i < N.size(); i++)
+        custosRelativos[i] = c[N[i]] - produtoEscalar(vetorMultiplicador, pegaColuna(A, N[i]));
     double menor = menorValor(custosRelativos);
-    for (int i = 0; i < custosRelativos.size(); i++)
+    for (size_t i = 0; i < custosRelativos.size(); i++)
     {
         if (custosRelativos[i] == menor)
         {
@@ -760,34 +560,26 @@ double calcCustosRelativos(vector<vector<double>> A, vector<int> B, vector<int> 
  * @param c     [IN]  Vetor de custos.
  * @retval bool  Retorna true se a fase I for necessária, false caso contrário.
  */
-bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> &b, vector<double> &c)
+bool preFaseI(string input, Matriz A, Vetor &b, Vetor &c)
 {
     regex max("(max|Max|MAX)", regex::optimize);
     smatch match;
     regex_search(input, match, max);
     if (!match.empty())
-    {
-        for (int i = 0; i < c.size(); i++)
-        {
+        for (size_t i = 0; i < c.size(); i++)
             c[i] = -c[i];
-        }
-    }
-    for (int i = 0; i < b.size(); i++)
+    for (size_t i = 0; i < b.size(); i++)
     {
         if (b[i] < 0)
         {
             b[i] = -b[i];
-            for (int j = 0; j < A[i].size(); j++)
-            {
+            for (size_t j = 0; j < A[i].size(); j++)
                 A[i][j] = -A[i][j];
-            }
         }
     }
     int i = 0;
     while (input[i] != '\n' && input[i] != '\0')
-    {
         i++;
-    }
     regex restricaoRegex("(>=|>|=)", regex::optimize);
     auto it = input.cbegin();
     it += i + 1;
@@ -798,9 +590,7 @@ bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int
         if (op == "=")
         {
             if (!(pos > 0 && (input[pos - 1] == '<' || input[pos - 1] == '>')))
-            {
                 return true;
-            }
         }
         else if (op == ">" || op == ">=")
         {
@@ -811,6 +601,7 @@ bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int
     return false;
 }
 
+
 /**
  * Realiza a fase I do método Simplex.
  * @param A     [IN]  Matriz original.
@@ -819,9 +610,8 @@ bool preFaseI(string input, vector<vector<double>> A, vector<int> &B, vector<int
  * @param b     [IN]  Vetor de recursos.
  * @param c     [IN]  Vetor de custos.
  */
-void faseI(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> b, vector<double> c)
+void faseI(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c)
 {
-    /*Fase 1 ta tudo errada
     cout << "Fase I (Simplex):" << endl;
 
     int m = b.size();
@@ -945,21 +735,21 @@ void faseI(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<doub
  * @param b     [IN]  Vetor de recursos.
  * @param c     [IN]  Vetor de custos.
  */
-void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<double> b, vector<double> c)
+void faseII(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c)
 {
-    vector<double> solucaoBasica, y;
+    Vetor solucaoBasica, y;
     double custoRelativo = -1;
     int k = 0;
 
     while (custoRelativo < 0)
     {
-        vector<vector<double>> inversaB = inversa(extraiColunas(A, B));
-        solucaoBasica = calcSolucaoBasica(A, B, N, b);
+        Matriz inversaB = inversa(extraiColunas(A, B));
+        solucaoBasica = calcSolucaoBasica(A, B, b);
         int variavelEntrada;
         custoRelativo = calcCustosRelativos(A, B, N, c, variavelEntrada);
         if (custoRelativo < 0)
         {
-            y = multMatrizVetor(inversaB, B.size(), B.size(), pegaColuna(A, N[variavelEntrada]));
+            y = multMatrizVetor(inversaB, pegaColuna(A, N[variavelEntrada]));
             if (vetorMenorZero(y))
             {
                 throw runtime_error("Solução não é viável.");
@@ -967,8 +757,8 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
             }
             int variavelSaida;
             int menor = INT16_MAX;
-            vector<double> aux = alocaVetor<double>(y.size());
-            for (int i = 0; i < y.size(); i++)
+            Vetor aux(y.size());
+            for (size_t i = 0; i < y.size(); i++)
             {
                 if (y[i] > 0)
                 {
@@ -1005,7 +795,7 @@ void faseII(vector<vector<double>> A, vector<int> &B, vector<int> &N, vector<dou
          << "x = [";
 
     double solucaoOtima = 0;
-    for (int i = 0; i < (B.size() + N.size()); i++)
+    for (size_t i = 0; i < (B.size() + N.size()); i++)
     {
         solucaoOtima += c[i] * solucaoBasica[i];
         cout << solucaoBasica[i];
@@ -1025,8 +815,8 @@ int main()
 
     // cout << input << endl;
 
-    vector<vector<double>> A = alocaMatriz<double>(numRestricoes, numVariaveis);
-    vector<double> b(numRestricoes), c(numVariaveis);
+    Matriz A(numRestricoes, Vetor(numVariaveis));
+    Vetor b(numRestricoes), c(numVariaveis);
 
     lerCoeficientes(A, input, numRestricoes, numVariaveis, b, c);
 
@@ -1045,10 +835,11 @@ int main()
          << endl;
 
     vector<int> B(numRestricoes), N(numVariaveis - numRestricoes);
-    bool faseInecessaria = preFaseI(input, A, B, N, b, c);
+    bool faseInecessaria = preFaseI(input, A, b, c);
     if (faseInecessaria)
     {
         cout << "Fase I necessaria." << endl;
+        escolherColunasAleatorias(A, numRestricoes, numVariaveis, B, N);
         faseI(A, B, N, b, c);
     }
     else
@@ -1056,6 +847,7 @@ int main()
         cout << "Fase I nao necessaria." << endl;
         escolherColunasAleatorias(A, numRestricoes, numVariaveis, B, N);
     }
+    impremeVetor(c);
     faseII(A, B, N, b, c);
 
     cout << endl
