@@ -122,9 +122,7 @@ string lerTxt()
 {
     ifstream file("input.txt");
     if (!file)
-    {
         throw runtime_error("Não foi possivel abrir o arquivo.");
-    }
     string str, input;
     while (getline(file, str))
     {
@@ -493,13 +491,13 @@ void escolherColunasAleatorias(Matriz M, int m, int n, Vetor b, vector<int> &B, 
                 for (int i = 0; i < n; ++i)
                     if (!contemValor(B, i))
                         N.push_back(i);
-                cout << "Base viável encontrada após " << count << " tentativas.\n";
+                cout << "Base viavel encontrada apos " << count << " tentativas.\n";
                 return;
             }
         }
         count++;
     }
-    throw runtime_error("Não foi possível encontrar uma base viável após " + to_string(count) + " tentativas.");
+    throw runtime_error("Nao foi possivel encontrar uma base viavel apos " + to_string(count) + " tentativas.");
 }
 
 /**
@@ -735,7 +733,7 @@ void faseI(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c)
  * @param input     [IN]  A string que possuí o input de onde os coeficientes serão lidos.
  * @return double  Retorna o valor da solução ótima encontrada.
  */
-double faseII(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c, string input)
+void faseII(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c, string input)
 {
     Vetor solucaoBasica, y;
     double custoRelativo = -1;
@@ -801,7 +799,6 @@ double faseII(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c, string
 
     cout << "Solucao otima: " << solucaoOtima << endl
          << "--------------------------" << endl;
-    return solucaoOtima;
 }
 
 int main()
@@ -830,9 +827,7 @@ int main()
             cout << "Fase I nao necessaria." << endl;
             escolherColunasAleatorias(A, numRestricoes, numVariaveis, b, B, N);
         }
-        double solucao = faseII(A, B, N, b, c, input);
-        if (solucao == 0)
-            cout << "Problema sem solução" << endl;
+        faseII(A, B, N, b, c, input);
     }
     catch (const runtime_error &e) {
         cout << "Erro: " << e.what() << endl;
