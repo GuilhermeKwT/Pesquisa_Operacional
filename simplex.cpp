@@ -31,6 +31,14 @@ double pow(double base, int exp)
     return result;
 }
 
+// Calcula o fatorial de um número.
+int fatorial(int n)
+{
+    if (n <= 1)
+        return 1;
+    return n * fatorial(n - 1);
+}
+
 /**
  * Extrai uma coluna específica de uma matriz.
  * @param A     [IN]  A matriz de onde a coluna será extraída.
@@ -89,20 +97,6 @@ T menorValor(vector<T> v)
     return menor;
 }
 
-/**
- * Verifica se todos os elementos de um vetor são menores ou iguais a zero.
- * @param v     [IN]  O vetor a ser verificado.
- * @retval bool  Retorna true se todos os elementos forem menores ou iguais a zero, false caso contrário.
- */
-template <typename T>
-bool vetorMenorZero(vector<T> v)
-{
-    for (size_t i = 0; i < v.size(); i++)
-        if (v[i] > 0)
-            return false;
-    return true;
-}
-
 // Faz a impressão de uma matriz
 template <typename T>
 void imprimeMatriz(const vector<vector<T>> &M)
@@ -145,6 +139,7 @@ string lerTxt()
             i--;
         }
     }
+    file.close();
     return input;
 }
 
@@ -208,7 +203,7 @@ void lerCoeficientes(Matriz &A, string input, int numRestricoes, int numVariavei
 {
     regex termoRegex("(-?\\d*[.]?\\d*)x(\\d+)", regex::optimize);
     regex restricaoRegex("(<=|>=|<|>)", regex::optimize);
-    regex valRestricao(("\\d+[.]?\\d*"), regex::optimize);
+    regex valRestricao(("-?\\d+[.]?\\d*"), regex::optimize);
     smatch match;
     int linha = 0, k = 0, varFolga = 0;
 
@@ -255,9 +250,6 @@ void lerCoeficientes(Matriz &A, string input, int numRestricoes, int numVariavei
             it = match.suffix().first;
         }
 
-        if (regex_search(it, restricao.cend(), match, valRestricao))
-            b[linha] = stod(match.str());
-
         if (regex_search(restricao, match, restricaoRegex))
         {
             string sinal = match.str(1);
@@ -272,6 +264,15 @@ void lerCoeficientes(Matriz &A, string input, int numRestricoes, int numVariavei
             varFolga++;
         }
 
+        if (regex_search(it, restricao.cend(), match, valRestricao)){
+            b[linha] = stod(match.str());
+            if (b[linha] < 0)
+            {
+                b[linha] = -b[linha];
+                for (int j = 0; j < numVariaveis; j++)
+                    A[linha][j] = -A[linha][j];
+            }
+        }
         linha++;
     }
 }
@@ -410,7 +411,7 @@ Matriz inversa(Matriz M)
             }
         }
         if (fabs(maxEl) == 0.0)
-            throw runtime_error("Matriz singular, não possui inversa.");
+            throw runtime_error("Matriz singular, nao possui inversa.");
 
         swap(M[i], M[maxRow]);
         swap(I[i], I[maxRow]);
@@ -438,13 +439,6 @@ Matriz inversa(Matriz M)
     return I;
 }
 
-int fatorial(int n)
-{
-    if (n <= 1)
-        return 1;
-    return n * fatorial(n - 1);
-}
-
 /**
  * Escolhe colunas aleatórias para formar a matriz básica.
  * @param M     [IN]  Matriz original.
@@ -453,13 +447,13 @@ int fatorial(int n)
  * @param B     [OUT]  Vetor que armazenará as colunas da matriz basica.
  * @param N     [OUT]  Vetor que armazenará as colunas da matriz não basica.
  */
-void escolherColunasAleatorias(Matriz M, int m, int n, vector<int> &B, vector<int> &N)
+void escolherColunasAleatorias(Matriz M, int m, int n, Vetor b, vector<int> &B, vector<int> &N)
 {
     Matriz MatrizBasicaTemp(m, Vetor(m, 0));
     Matriz conjuntosTestados(n, Vetor(m));
-    int ValBTemp, count = 0, fatorialMax = fatorial(n) / (fatorial(m) * fatorial(n - m));
+    int ValBTemp, count = 0, fatorialMax = fatorial(n);
 
-    while (determinante(MatrizBasicaTemp, m) == 0 && count < fatorialMax)
+    while (count < fatorialMax)
     {
         vector<int> BTemp(m, -1);
         for (int i = 0; i < m; i++)
@@ -469,44 +463,49 @@ void escolherColunasAleatorias(Matriz M, int m, int n, vector<int> &B, vector<in
             {
                 ValBTemp = (rand() % n);
                 if (contemValor(BTemp, ValBTemp))
-                {
                     existe = true;
-                }
                 else
-                {
                     existe = false;
-                }
             }
             BTemp[i] = ValBTemp;
             B[i] = ValBTemp;
             for (int j = 0; j < m; j++)
                 MatrizBasicaTemp[j][i] = M[j][B[i]];
         }
-        // Tem que refazer
-        //if (!contemConjunto(conjuntosTestados, B))
-        //{
-        //    conjuntosTestados.push_back(B);
-        //}
-        cout << "Tentativa " << count + 1 << ": Colunas escolhidas: ";
-        impremeVetor(B);
+        if (determinante(MatrizBasicaTemp, m) != 0){
+            Matriz Bmat = extraiColunas(M, BTemp);
+            Matriz invB = inversa(Bmat);
+            Vetor xB = multMatrizVetor(invB, b);
+
+            bool viavel = true;
+            for (double val : xB)
+            {
+                if (val < -1e-9)
+                {
+                    viavel = false;
+                    break;
+                }
+            }
+            if (viavel)
+            {
+                B = BTemp;
+                N.clear();
+                for (int i = 0; i < n; ++i)
+                    if (!contemValor(B, i))
+                        N.push_back(i);
+                cout << "Base viável encontrada após " << count << " tentativas.\n";
+                return;
+            }
+        }
         count++;
     }
-    int j = 0;
-    for (int i = 0; i < n; i++)
-    {
-        if (!contemValor(B, i) && !contemValor(N, i))
-        {
-            N[j] = i;
-            j++;
-        }
-    }
+    throw runtime_error("Não foi possível encontrar uma base viável após " + to_string(count) + " tentativas.");
 }
 
 /**
  * Calcula a solução básica inicial.
  * @param A     [IN]  Matriz original.
  * @param B     [IN]  Vetor que armazena as colunas da matriz basica.
- * @param N     [IN]  Vetor que armazena as colunas da matriz não basica.
  * @param b     [IN]  Vetor de recursos.
  * @retval vector<double>  Retorna a solução básica inicial.
  */
@@ -531,7 +530,7 @@ Vetor calcSolucaoBasica(Matriz A, vector<int> B, Vetor b)
  */
 double calcCustosRelativos(Matriz A, vector<int> B, vector<int> N, Vetor c, int &varEntrada)
 {
-    Vetor vetorMultiplicador, custosRelativos(N.size()), custosBasica(B.size());
+    Vetor vetorMultiplicador, custosRelativos(N.size(), 0), custosBasica(B.size(), 0);
     Matriz inversaB = inversa(extraiColunas(A, B));
     for (size_t i = 0; i < B.size(); i++)
         custosBasica[i] = c[B[i]];
@@ -552,15 +551,11 @@ double calcCustosRelativos(Matriz A, vector<int> B, vector<int> N, Vetor c, int 
 
 /**
  * Verifica se a fase I é necessária.
- * @param input     [IN]  A string que possuí o input de onde os coeficientes serão lidos.
- * @param A     [IN]  Matriz original.
- * @param B     [IN]  Vetor que armazena as colunas da matriz basica.
- * @param N     [IN]  Vetor que armazena as colunas da matriz não basica.
- * @param b     [IN]  Vetor de recursos.
+ * @param input     [IN]  A string que possuí o input de onde as restrições seram lidas.
  * @param c     [IN]  Vetor de custos.
  * @retval bool  Retorna true se a fase I for necessária, false caso contrário.
  */
-bool preFaseI(string input, Matriz A, Vetor &b, Vetor &c)
+bool preFaseI(string input, Vetor &c)
 {
     regex max("(max|Max|MAX)", regex::optimize);
     smatch match;
@@ -568,39 +563,21 @@ bool preFaseI(string input, Matriz A, Vetor &b, Vetor &c)
     if (!match.empty())
         for (size_t i = 0; i < c.size(); i++)
             c[i] = -c[i];
-    for (size_t i = 0; i < b.size(); i++)
-    {
-        if (b[i] < 0)
-        {
-            b[i] = -b[i];
-            for (size_t j = 0; j < A[i].size(); j++)
-                A[i][j] = -A[i][j];
-        }
-    }
     int i = 0;
     while (input[i] != '\n' && input[i] != '\0')
         i++;
-    regex restricaoRegex("(>=|>|=)", regex::optimize);
+    regex restricaoRegex("(<=|<|>=|>|=)", regex::optimize);
     auto it = input.cbegin();
     it += i + 1;
     while (regex_search(it, input.cend(), match, restricaoRegex))
     {
         string op = match.str(1);
-        size_t pos = match.position(1) + (it - input.cbegin());
-        if (op == "=")
-        {
-            if (!(pos > 0 && (input[pos - 1] == '<' || input[pos - 1] == '>')))
-                return true;
-        }
-        else if (op == ">" || op == ">=")
-        {
+        if (op == ">" || op == ">=" || op == "=")
             return true;
-        }
         it += match.position(0) + match.length(0);
     }
     return false;
 }
-
 
 /**
  * Realiza a fase I do método Simplex.
@@ -612,131 +589,80 @@ bool preFaseI(string input, Matriz A, Vetor &b, Vetor &c)
  */
 void faseI(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c)
 {
-    cout << "Fase I (Simplex):" << endl;
-
-    int m = b.size();
+    int m = A.size();
     int n = A[0].size();
+    int artificiaisAdicionadas = 0;
 
-    // Identifica restrições que precisam de variáveis artificiais
-    vector<int> artificiais;
-    vector<vector<double>> A_aux = A;
-    vector<double> c_aux = alocaVetor<double>(n + m, 0.0);
-    for (int i = n; i < n + m; ++i) {
-        c_aux[i] = 1.0;
-    }
-
-    // Adiciona variáveis artificiais para cada restrição que não tem folga positiva
-    for (int i = 0; i < m; ++i) {
-        // Adiciona coluna artificial
-        for(int j = 0; j < m; ++j) {
-            if (A_aux[i][j] < 0) {
-                A_aux[i].push_back(1.0); // Variável artificial
-            } else {
-                A_aux[i].push_back(0.0); // Coluna de zeros
+    // Caso A: linha não possui coluna identidade (todas colunas de folga são 0 ou possui -1)
+    vector<bool> precisaArtificial(m, false);
+    for (int i = 0; i < m; i++) {
+        bool encontrouIdentidade = false;
+        for (int j = n - m; j < n; j++) {
+            bool identidade = true;
+            for (int k = 0; k < m; k++) {
+                if ((k == i && A[k][j] != 1.0) || (k != i && A[k][j] != 0.0)) {
+                    identidade = false;
+                    break;
+                }
+            }
+            if (identidade) {
+                encontrouIdentidade = true;
+                break;
             }
         }
-    }
-
-    N.resize(n);
-    for(int i = 0; i < n; i++)
-    {
-        N[i] = i;
-    }
-
-    for(int i = 0; i < m; i++)
-    {
-        B[i] = i + n;
-    }
-
-    cout << "A_aux: " << endl;
-    imprimeMatriz(A_aux);
-    cout << "Básicas: "; impremeVetor(B);
-    cout << "Não básicas: "; impremeVetor(N);
-    cout << "c_aux: "; impremeVetor(c_aux);
-
-    // Inicializa solução básica
-    vector<double> solucaoBasica = calcSolucaoBasica(A_aux, B, N, b);
-
-    cout << "A_aux: " << endl;
-    imprimeMatriz(A_aux);
-    cout << "Básicas: "; impremeVetor(B);
-    cout << "Não básicas: "; impremeVetor(N);
-    cout << "c_aux: "; impremeVetor(c_aux);
-
-    // Simplex Fase I: Minimiza soma das artificiais
-    int iter = 0;
-    while (true) {
-        int varEntrada;
-        double custoRelativo = calcCustosRelativos(A_aux, B, N, c_aux, varEntrada);
-        if (custoRelativo >= 0) break; // Ótimo encontrado
-
-        // Calcula direção
-        vector<vector<double>> invB = inversa(extraiColunas(A_aux, B));
-        vector<double> y = multMatrizVetor(invB, B.size(), B.size(), pegaColuna(A_aux, N[varEntrada]));
-
-        // Teste de viabilidade
-        if (vetorMenorZero(y)) {
-            throw runtime_error("Problema inviável na Fase I.");
+        if (!encontrouIdentidade) {
+            precisaArtificial[i] = true; // Caso A
         }
+    }
 
-        // Razão mínima
-        int varSaida = -1;
-        double minRazao = std::numeric_limits<double>::max();
-        for (int i = 0; i < y.size(); ++i) {
-            if (y[i] > 1e-8) {
-                double razao = solucaoBasica[B[i]] / y[i];
-                if (razao < minRazao) {
-                    minRazao = razao;
-                    varSaida = i;
+    // Adiciona variáveis artificiais somente para restrições que precisam (Caso A)
+    for (int i = 0; i < m; i++) {
+        if (precisaArtificial[i]) {
+            for (int j = 0; j < m; j++) {
+                A[j].push_back((j == i) ? 1.0 : 0.0);
+            }
+            artificiaisAdicionadas++;
+        }
+    }
+
+    // Cria vetor de custos artificiais: custo 1 para variáveis artificiais
+    Vetor cArtificial(n + artificiaisAdicionadas, 0);
+    for (int i = n; i < n + artificiaisAdicionadas; i++)
+        cArtificial[i] = 1.0;
+
+    // Define base inicial
+    B.clear();
+    N.clear();
+    int idxArtificial = 0;
+    for (int i = 0; i < m; i++) {
+        if (precisaArtificial[i]) {
+            // Caso A: variável artificial entra na base
+            B.push_back(n + idxArtificial);
+            idxArtificial++;
+        } else {
+            // Caso B: restrição com <= e já possui coluna identidade (folga)
+            for (int j = 0; j < n; j++) {
+                bool identidade = true;
+                for (int k = 0; k < m; k++) {
+                    if ((k == i && A[k][j] != 1.0) || (k != i && A[k][j] != 0.0)) {
+                        identidade = false;
+                        break;
+                    }
+                }
+                if (identidade) {
+                    B.push_back(j);
+                    break;
                 }
             }
         }
-        if (varSaida == -1) {
-            throw runtime_error("Solução ilimitada na Fase I.");
-        }
-
-        // Troca básica
-        int temp = B[varSaida];
-        B[varSaida] = N[varEntrada];
-        N[varEntrada] = temp;
-
-        // Atualiza solução básica
-        solucaoBasica = calcSolucaoBasica(A_aux, B, N, b);
-        iter++;
     }
 
-    // Verifica se todas as artificiais são zero
-    for (int idx : artificiais) {
-        if (fabs(solucaoBasica[idx]) > 1e-8) {
-            throw runtime_error("Problema original inviável (artificiais não zeradas).");
-        }
+    for (int i = 0; i < n + artificiaisAdicionadas; i++) {
+        if (!contemValor(B, i))
+            N.push_back(i);
     }
 
-    // Remove variáveis artificiais de B, N, A e c
-    sort(artificiais.rbegin(), artificiais.rend());
-    for (int idx : artificiais) {
-        for (auto& row : A_aux) row.erase(row.begin() + idx);
-        c_aux.erase(c_aux.begin() + idx);
-        B.erase(remove(B.begin(), B.end(), idx), B.end());
-        N.erase(remove(N.begin(), N.end(), idx), N.end());
-    }
-
-    cout << "Fase I concluída. Solução básica viável encontrada." << endl;
-    cout << "Básicas: "; impremeVetor(B);
-    cout << "Não básicas: "; impremeVetor(N);
-    */
-}
-
-/**
- * Realiza a fase II do método Simplex.
- * @param A     [IN]  Matriz original.
- * @param B     [IN]  Vetor que armazena as colunas da matriz basica.
- * @param N     [IN]  Vetor que armazena as colunas da matriz não basica.
- * @param b     [IN]  Vetor de recursos.
- * @param c     [IN]  Vetor de custos.
- */
-void faseII(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c)
-{
+    // Início da iteração simplex (Fase I)
     Vetor solucaoBasica, y;
     double custoRelativo = -1;
     int k = 0;
@@ -746,16 +672,85 @@ void faseII(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c)
         Matriz inversaB = inversa(extraiColunas(A, B));
         solucaoBasica = calcSolucaoBasica(A, B, b);
         int variavelEntrada;
+        custoRelativo = calcCustosRelativos(A, B, N, cArtificial, variavelEntrada);
+
+        if (custoRelativo < 0)
+        {
+            y = multMatrizVetor(inversaB, pegaColuna(A, N[variavelEntrada]));
+
+            int variavelSaida = -1;
+            double minRazao = INT16_MAX;
+            for (size_t i = 0; i < y.size(); i++) {
+                if (y[i] > 0) {
+                    double razao = solucaoBasica[B[i]] / y[i];
+                    if (razao < minRazao) {
+                        minRazao = razao;
+                        variavelSaida = i;
+                    }
+                }
+            }
+
+            if (variavelSaida == -1)
+                throw runtime_error("Problema nao possui solucao otima finita.");
+
+            int varAux = B[variavelSaida];
+            B[variavelSaida] = N[variavelEntrada];
+            N[variavelEntrada] = varAux;
+
+            k++;
+        }
+    }
+
+    // Verifica se restaram variáveis artificiais na base
+    for (size_t i = 0; i < B.size(); i++) {
+        if (B[i] >= n) {
+            throw runtime_error("Problema original infactivel: variavel artificial permaneceu na base.");
+        }
+    }
+
+    // Remove variáveis artificiais
+    for (auto &linha : A)
+        linha.resize(n);
+    c.resize(n);
+
+    // Remove variáveis artificiais do vetor das não básicas
+    vector<int> N_limpo;
+    for (size_t i = 0; i < N.size(); i++) {
+        if (N[i] < n) {
+            N_limpo.push_back(N[i]);
+        }
+    }
+    N = N_limpo;
+
+    cout << "Fim da Fase I. Solução basica viavel encontrada." << endl;
+}
+
+/**
+ * Realiza a fase II do método Simplex.
+ * @param A     [IN]  Matriz original.
+ * @param B     [IN]  Vetor que armazena as colunas da matriz basica.
+ * @param N     [IN]  Vetor que armazena as colunas da matriz não basica.
+ * @param b     [IN]  Vetor de recursos.
+ * @param c     [IN]  Vetor de custos.
+ * @param input     [IN]  A string que possuí o input de onde os coeficientes serão lidos.
+ * @return double  Retorna o valor da solução ótima encontrada.
+ */
+double faseII(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c, string input)
+{
+    Vetor solucaoBasica, y;
+    double custoRelativo = -1;
+    int k = 0;
+
+    while (custoRelativo < 0)
+    {
+        Matriz inversaB = inversa(extraiColunas(A, B));
+        solucaoBasica = calcSolucaoBasica(A, B, b);
+        int variavelEntrada = -1;
         custoRelativo = calcCustosRelativos(A, B, N, c, variavelEntrada);
         if (custoRelativo < 0)
         {
             y = multMatrizVetor(inversaB, pegaColuna(A, N[variavelEntrada]));
-            if (vetorMenorZero(y))
-            {
-                throw runtime_error("Solução não é viável.");
-                return;
-            }
-            int variavelSaida;
+            int variavelSaida = -1;
             int menor = INT16_MAX;
             Vetor aux(y.size());
             for (size_t i = 0; i < y.size(); i++)
@@ -770,21 +765,13 @@ void faseII(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c)
                     }
                 }
             }
+            if (variavelSaida == -1)
+                throw runtime_error("Problema nao possui solucao otima finita.");
+
             int varAux = B[variavelSaida];
             B[variavelSaida] = N[variavelEntrada];
             N[variavelEntrada] = varAux;
             k++;
-            /*
-            cout << "Custo relativo: " << custoRelativo << endl;
-            cout << "Básica: " << endl;
-            impremeVetor(B);
-            cout << "Não básica: " << endl;
-            impremeVetor(N);
-            cout << "Iteração: " << k << endl
-                 << "Variável de entrada: x" << N[variavelEntrada] + 1 << endl
-                 << "Variável de saída: x" << B[variavelSaida] + 1 << endl
-                 << "--------------------------" << endl;
-                 */
         }
     }
 
@@ -801,8 +788,20 @@ void faseII(Matriz A, vector<int> &B, vector<int> &N, Vetor b, Vetor c)
         cout << solucaoBasica[i];
         (i < B.size() + N.size() - 1) ? cout << ", " : cout << "]" << endl;
     }
+    
+    regex max("(max|Max|MAX)", regex::optimize);
+    smatch match;
+    regex_search(input, match, max);
+    if (!match.empty())
+        solucaoOtima = -solucaoOtima;
+
+    double solucaoAbs = fabs(solucaoOtima);
+    if (solucaoAbs < 1e-9)
+            solucaoOtima = 0;
+
     cout << "Solucao otima: " << solucaoOtima << endl
          << "--------------------------" << endl;
+    return solucaoOtima;
 }
 
 int main()
@@ -813,50 +812,32 @@ int main()
     int numVariaveis, numRestricoes;
     calcularIJ(input, &numVariaveis, &numRestricoes);
 
-    // cout << input << endl;
-
     Matriz A(numRestricoes, Vetor(numVariaveis));
     Vetor b(numRestricoes), c(numVariaveis);
 
     lerCoeficientes(A, input, numRestricoes, numVariaveis, b, c);
 
-    cout << "-------------------------" << endl;
-    cout << "Vetor c: " << endl;
-    impremeVetor(c);
-
-    cout << endl
-         << "Matriz A: " << endl;
-    imprimeMatriz(A);
-
-    cout << endl
-         << "Vetor b: " << endl;
-    impremeVetor(b);
-    cout << "-------------------------" << endl
-         << endl;
-
     vector<int> B(numRestricoes), N(numVariaveis - numRestricoes);
-    bool faseInecessaria = preFaseI(input, A, b, c);
-    if (faseInecessaria)
-    {
-        cout << "Fase I necessaria." << endl;
-        escolherColunasAleatorias(A, numRestricoes, numVariaveis, B, N);
-        faseI(A, B, N, b, c);
+    try{
+        bool faseInecessaria = preFaseI(input, c);
+        if (faseInecessaria)
+        {
+            cout << "Fase I necessaria." << endl;
+            faseI(A, B, N, b, c);
+        }
+        else
+        {
+            cout << "Fase I nao necessaria." << endl;
+            escolherColunasAleatorias(A, numRestricoes, numVariaveis, b, B, N);
+        }
+        double solucao = faseII(A, B, N, b, c, input);
+        if (solucao == 0)
+            cout << "Problema sem solução" << endl;
     }
-    else
-    {
-        cout << "Fase I nao necessaria." << endl;
-        escolherColunasAleatorias(A, numRestricoes, numVariaveis, B, N);
+    catch (const runtime_error &e) {
+        cout << "Erro: " << e.what() << endl;
+        return 1;
     }
-    impremeVetor(c);
-    faseII(A, B, N, b, c);
-
-    cout << endl
-         << "B: " << endl;
-    impremeVetor(B);
-    cout << endl;
-    cout << "N: " << endl;
-    impremeVetor(N);
-    cout << endl;
 
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
